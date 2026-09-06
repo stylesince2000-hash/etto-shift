@@ -430,6 +430,8 @@ input.pin::placeholder{letter-spacing:10px}
 .rsv-card .seats{margin-top:5px;display:flex;gap:4px;flex-wrap:wrap}
 .rsv-chip{font-size:10.5px;font-weight:700;background:var(--foam);color:var(--coffee);padding:2px 8px;border-radius:20px;white-space:nowrap}
 .rsv-chip.c{background:#e9eef6}
+.tel-link{display:inline-flex;align-items:center;gap:4px;color:var(--coffee);font-weight:700;text-decoration:none;background:var(--foam);padding:4px 11px;border-radius:20px;font-size:12.5px;letter-spacing:.3px}
+.tel-link:active{opacity:.55}
 .rsv-card .ck{flex:0 0 62px;min-height:46px;border-radius:12px;border:1.5px solid var(--line);background:var(--paper);font-size:10.5px;font-weight:700;color:var(--coffee);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;line-height:1.15;font-family:inherit;padding:5px 2px}
 .rsv-card .ck .i{font-size:16px;line-height:1}
 .rsv-card .ck.on{background:var(--coffee);border-color:var(--coffee);color:#fff}
@@ -450,6 +452,8 @@ input.pin::placeholder{letter-spacing:10px}
 /* ご来店時間のドラム（iPhoneのアラーム風） */
 .wheel-wrap{position:relative;display:flex;align-items:stretch;justify-content:center;gap:0;background:var(--paper);border:1.5px solid var(--line);border-radius:14px;height:154px;overflow:hidden;user-select:none;-webkit-user-select:none;margin-top:4px}
 .wheel-band{position:absolute;left:10px;right:10px;top:50%;height:44px;transform:translateY(-50%);background:var(--foam);border-radius:10px;pointer-events:none;z-index:0}
+.wheel-band.hit{animation:detent .13s ease-out}
+@keyframes detent{0%{transform:translateY(-50%) scaleX(1)}42%{transform:translateY(-50%) scaleX(1.045);background:var(--line)}100%{transform:translateY(-50%) scaleX(1)}}
 .wheel-fade{position:absolute;left:0;right:0;height:46px;pointer-events:none;z-index:2}
 .wheel-fade.t{top:0;background:linear-gradient(var(--paper),rgba(247,249,252,0))}
 .wheel-fade.b{bottom:0;background:linear-gradient(rgba(247,249,252,0),var(--paper))}
@@ -461,6 +465,20 @@ input.pin::placeholder{letter-spacing:10px}
 .wheel-sep{position:relative;z-index:1;align-self:center;font-size:23px;font-weight:700;color:var(--espresso);padding-bottom:3px;flex:0 0 12px}
 .time-prev{text-align:center;font-size:15px;font-weight:700;color:var(--espresso);margin-top:12px;letter-spacing:.5px}
 .time-prev .lbl{font-size:12px;font-weight:500;color:var(--muted);margin-left:6px}
+
+/* 予約の一覧（今週/来週/再来週） */
+.rsv-day{margin-bottom:20px}
+.rd-head{display:flex;align-items:center;gap:8px;padding:6px 2px 10px}
+.rd-date{font-size:15.5px;font-weight:800;color:var(--espresso)}
+.rd-date.sun{color:var(--rose)}
+.rd-date.sat{color:#5a7d9a}
+.rd-cnt{font-size:11.5px;font-weight:700;color:var(--coffee);background:var(--foam);padding:3px 9px;border-radius:20px}
+.rd-non{font-size:11.5px;color:var(--muted)}
+.rd-cl{font-size:11px;font-weight:700;color:var(--rose);background:#f6e2e3;padding:3px 8px;border-radius:20px}
+.rd-add{margin-left:auto;background:var(--foam);border:none;color:var(--espresso);width:34px;height:34px;border-radius:11px;font-size:18px;cursor:pointer;font-family:inherit;flex-shrink:0;line-height:1}
+.rsv-day.today .rd-head{border-left:4px solid var(--latte);padding-left:8px}
+.day .rc{font-size:10px;font-weight:800;color:#fff;background:var(--coffee);border-radius:20px;padding:0 5px;margin-top:2px;line-height:15px}
+.home-btn{margin-top:24px}
 .rsv-warn{background:#fdf0e2;border:1px solid #ecd7b3;border-radius:12px;padding:9px 12px;font-size:12.5px;color:var(--coffee);margin-top:10px;line-height:1.6}
 </style>
 </head>
@@ -540,10 +558,10 @@ input.pin::placeholder{letter-spacing:10px}
   <!-- ===== RESERVATION ===== -->
   <section id="rsv" class="screen">
     <div class="topbar">
-      <img src="logo-light.png" alt="食・酒・楽 笑っと" style="height:23px;width:auto;display:block;flex-shrink:0">
+      <img src="logo-light.png" alt="ホームに戻る" onclick="rsvExit()" style="height:23px;width:auto;display:block;flex-shrink:0;cursor:pointer">
       <h1 class="tb-page">予約<span class="sub" id="rsvSub">よやく</span></h1>
       <button class="dev-btn snd-btn" onclick="toggleSound()" title="操作音のON/OFF">🔊</button>
-      <button class="logout-btn" onclick="rsvExit()">‹ 戻る</button>
+      <button class="logout-btn" onclick="rsvExit()">🏠 ホーム</button>
     </div>
     <div class="body">
       <div class="rsv-head">
@@ -551,20 +569,32 @@ input.pin::placeholder{letter-spacing:10px}
         <div class="dl" id="rsvDateLabel" onclick="rsvPickDate()"></div>
         <button onclick="rsvDay(1)">›</button>
       </div>
-      <div class="seg" style="margin-bottom:14px">
+      <div class="seg" style="margin-bottom:12px">
         <button id="rsvSegMap" class="on" onclick="rsvView('map')">🗺 席で見る</button>
-        <button id="rsvSegList" onclick="rsvView('list')">📋 時間順</button>
+        <button id="rsvSegList" onclick="rsvView('list')">📋 一覧</button>
+      </div>
+      <div class="seg" id="rsvRangeSeg" style="margin-bottom:12px;display:none">
+        <button id="rsvR_week0" onclick="rsvRangeSet('week0')">今週</button>
+        <button id="rsvR_week1" onclick="rsvRangeSet('week1')">来週</button>
+        <button id="rsvR_week2" onclick="rsvRangeSet('week2')">再来週</button>
+        <button id="rsvR_cal" onclick="rsvRangeSet('cal')">📅</button>
+      </div>
+      <div class="monthnav" id="rsvMonthNav" style="display:none">
+        <button onclick="rsvMonth(-1)">‹</button>
+        <span class="mlabel" id="rsvMonthLabel"></span>
+        <button onclick="rsvMonth(1)">›</button>
       </div>
       <div class="rsv-sum" id="rsvSum"></div>
       <div id="rsvArea"></div>
-      <button class="btn btn-primary" style="margin-top:18px" onclick="rsvEdit(null)">＋ 予約を追加</button>
+      <button class="btn btn-primary" style="margin-top:18px" id="rsvAddBtn" onclick="rsvEdit(null)">＋ 予約を追加</button>
+      <button class="btn btn-ghost home-btn" onclick="rsvExit()">🏠 ホームに戻る</button>
     </div>
   </section>
 
   <!-- ===== TIMECARD ===== -->
   <section id="tc" class="screen">
     <div class="topbar">
-      <img src="logo-light.png" alt="食・酒・楽 笑っと" style="height:23px;width:auto;display:block;flex-shrink:0">
+      <img src="logo-light.png" alt="戻る" onclick="tcExit()" style="height:23px;width:auto;display:block;flex-shrink:0;cursor:pointer">
       <h1 class="tb-page">タイムカード<span class="sub">打刻</span></h1>
       <button class="dev-btn snd-btn" onclick="toggleSound()" title="操作音のON/OFF">🔊</button>
       <button class="logout-btn" onclick="tcExit()">‹ 戻る</button>
@@ -676,9 +706,7 @@ input.pin::placeholder{letter-spacing:10px}
               <span style="color:var(--muted)">〜</span>
               <select id="setNightTo" style="flex:1"><option value="4">朝4時</option><option value="5">朝5時</option><option value="6">朝6時</option></select>
             </div></div>
-          <div class="field"><label>深夜時給を自動計算する倍率（時給 × ○）</label>
-            <input type="number" id="setNightRate" step="0.05" min="1" max="3" placeholder="1.25">
-            <p class="hint" style="margin-top:6px">スタッフごとに<b>深夜時給を直接入力</b>できます。空欄の人だけこの倍率で自動計算します（法定は1.25倍以上）。</p></div>
+          <p class="hint" style="margin:-4px 0 14px">深夜時給は<b>スタッフごとに直接入力</b>します（⚙️設定 → スタッフ管理 で名前をタップ）。</p>
           <div class="field"><label>勤務時間の端数</label>
             <select id="setRound">
               <option value="1">1分単位（そのまま・推奨）</option>
@@ -755,8 +783,11 @@ input.pin::placeholder{letter-spacing:10px}
   <div class="modal" id="modalBox"></div>
 </div>
 <div class="toast" id="toast"></div>
-<!-- iOS 17.4+ は <input type="checkbox" switch> の切り替えで触覚が返るため、触覚用に隠し持っている -->
-<input type="checkbox" switch id="hapticSw" aria-hidden="true" tabindex="-1" style="position:fixed;left:-9999px;top:0;width:0;height:0;opacity:0;pointer-events:none">
+<!-- iOS 17.4+ の <input type="checkbox" switch> は切り替え時に触覚が返る。
+     0px/opacity:0 だと描画されず効かないので、1pxのほぼ透明として実際に置いている。 -->
+<label id="hapticLbl" aria-hidden="true" style="position:fixed;left:0;bottom:0;width:12px;height:12px;overflow:hidden;opacity:.008;pointer-events:none;z-index:-1">
+  <input type="checkbox" switch id="hapticSw" tabindex="-1" style="width:12px;height:12px;margin:0">
+</label>
 <button class="to-top" id="toTopBtn" onclick="goTop()" aria-label="上へ戻る">↑</button>
 <div id="landscapeView"></div>
 
@@ -784,7 +815,7 @@ const LS_KEY = "ettoShift_v1";
 const ROOM_KEY = "ettoShift_room";
 const PREF_KEY = "ettoShift_remember";  // "1"/"0" : ログイン保持の希望
 const SESS_KEY = "ettoShift_session";   // {role, empId} : 自動ログイン用
-const APP_VERSION = "2026.09.06-9";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
+const APP_VERSION = "2026.09.06-12";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
 let soundOn = localStorage.getItem("ettoShift_sound")!=="0";  // 操作音 ON/OFF（この端末ごと・既定ON）
 /* 管理者ログイン通知（開発者だけ受信）。GASをデプロイしたら /exec URL をここに貼る。空なら何もしない */
 const LOGIN_NOTIFY_URL = "";   // ★笑っとはメール通知なし（通知は亜子だけ）。使いたくなったらGASの /exec URL を貼る
@@ -1605,13 +1636,13 @@ function clearMark(ds){
    ===================================================================== */
 const OPEN_DEF = "17:30";   // 開店時刻（設定で変更可）。予約・打刻の入力欄の初期値に使う
 function openTime(){ const v=(store&&store.settings&&store.settings.open)||""; return /^\d{2}:\d{2}$/.test(v)?v:OPEN_DEF; }
-const PAY_DEF = { closeDay:31, dayStart:5, nightFrom:22, nightTo:5, nightRate:1.25, round:1 };
+const PAY_DEF = { closeDay:31, dayStart:5, nightFrom:22, nightTo:5, round:1 };
 function payCfg(){
   const p=(store && store.settings && store.settings.pay) || {};
   const n=function(v,d){ v=Number(v); return isFinite(v)?v:d; };
   return { closeDay:n(p.closeDay,PAY_DEF.closeDay), dayStart:n(p.dayStart,PAY_DEF.dayStart),
            nightFrom:n(p.nightFrom,PAY_DEF.nightFrom), nightTo:n(p.nightTo,PAY_DEF.nightTo),
-           nightRate:n(p.nightRate,PAY_DEF.nightRate), round:n(p.round,PAY_DEF.round) };
+           round:n(p.round,PAY_DEF.round) };
 }
 const TCK = { in:{l:"出勤",ic:"🏮"}, bs:{l:"休憩開始",ic:"☕"}, be:{l:"休憩終了",ic:"🔁"}, out:{l:"退勤",ic:"🌙"} };
 const TCS = { off:{l:"未出勤",c:"st-off"}, work:{l:"勤務中",c:"st-work"}, brk:{l:"休憩中",c:"st-break"}, done:{l:"退勤済",c:"st-done"} };
@@ -1685,7 +1716,9 @@ function tcDay(bd,sid,live){
   return { work:w, night:Math.min(w, segNightMin(sg.work)), brk:segMin(sg.brk), open:sg.open };
 }
 function wageOf(s){ const w=Number(s&&s.wage)||0; return w>0?Math.round(w):0; }
-function wageNOf(s){ const n=Number(s&&s.wageN)||0; return n>0?Math.round(n):Math.round(wageOf(s)*payCfg().nightRate); }
+/* 深夜時給は直接入力のみ。未入力なら通常の時給で計算する（勝手に割増しない） */
+function wageNOf(s){ const n=Number(s&&s.wageN)||0; return n>0?Math.round(n):wageOf(s); }
+function hasNightWage(s){ return (Number(s&&s.wageN)||0)>0; }
 
 /* 締め期間（offset 0=今期 / -1=前期） */
 function payPeriod(offset){
@@ -2141,10 +2174,10 @@ function timeAggHtml(){
   const used=rows.filter(r=>r.days>0);
   if(!used.length) return h+'<div class="empty-state"><div class="ic">🕗</div>この期間の打刻データはありません</div>';
 
-  let tw=0,tn=0,tp=0,noWage=0,openN=0;
+  let tw=0,tn=0,tp=0,noWage=0,noNight=0,openN=0;
   let t='<div class="tbl-wrap"><table class="tbl"><thead><tr><th class="nm">名前</th><th>日数</th><th>実働</th><th>うち深夜</th><th>時給</th><th>深夜時給</th><th>支給額</th></tr></thead><tbody>';
   used.forEach(function(r){
-    tw+=r.work; tn+=r.night; tp+=r.pay; if(!r.wage) noWage++; openN+=r.open;
+    tw+=r.work; tn+=r.night; tp+=r.pay; if(!r.wage) noWage++; else if(!hasNightWage(r.s) && r.night>0) noNight++; openN+=r.open;
     t+='<tr><td class="nm">'+esc(r.s.name)+(r.open?' <span class="pill amber">未退勤'+(r.open>1?r.open:'')+'</span>':'')+'</td>'+
        '<td>'+r.days+'</td><td>'+hm(r.work)+'</td><td>'+hm(r.night)+'</td>'+
        '<td>'+(r.wage?yen(r.wage):'—')+'</td><td>'+(r.wage?yen(r.wageN):'—')+'</td>'+
@@ -2153,6 +2186,7 @@ function timeAggHtml(){
   t+='</tbody><tfoot><tr><td class="nm">合計</td><td></td><td>'+hm(tw)+'</td><td>'+hm(tn)+'</td><td></td><td></td><td>'+yen(tp)+'</td></tr></tfoot></table></div>';
   h+=t;
   if(noWage) h+='<p class="hint" style="color:var(--rose);margin-top:10px">⚠️ 時給が未設定の方が'+noWage+'名います。⚙️設定 → スタッフ管理 で時給を入力してください。</p>';
+  if(noNight) h+='<p class="hint" style="color:var(--rose)">⚠️ 深夜時給が未設定の方が'+noNight+'名います（深夜分も通常の時給で計算しています）。</p>';
   if(openN) h+='<p class="hint" style="color:var(--rose)">⚠️ 退勤の打刻がない日があります。「今日の勤怠」から日付を選んで修正してください。</p>';
   h+='<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="aggCopy()">📋 集計をコピー</button></div>';
   return h;
@@ -2178,7 +2212,6 @@ function savePayCfg(){
   store.settings.pay={
     closeDay:g("setCloseDay",31), dayStart:g("setDayStart",5),
     nightFrom:g("setNightFrom",22), nightTo:g("setNightTo",5),
-    nightRate:Math.max(1, Math.min(3, g("setNightRate",1.25))),
     round:g("setRound",1)
   };
   persist(); syncSettingsForm(); renderStaffManage();
@@ -2254,6 +2287,16 @@ function rsvClearSeats(ds,id){
 
 /* ---------- 画面 ---------- */
 let rsvDate="", rsvVw="map", _rsvFrom="emp";
+let rsvRange="week0";          // 一覧の範囲: week0=今週 / week1=来週 / week2=再来週 / cal=カレンダー
+let rsvCursor=new Date();      // カレンダー表示の月
+function rsvRangeSet(v){ rsvRange=v; rsvPick=null; renderRsv(); window.scrollTo(0,0); if(soundOn&&Snd.tap) Snd.tap(); }
+function rsvMonth(n){ rsvCursor.setMonth(rsvCursor.getMonth()+n); renderRsv(); }
+/* 一覧から日付をタップしたら、その日のフロア図へ */
+function rsvGoDay(ds){ rsvDate=ds; rsvVw="map"; rsvPick=null; renderRsv(); window.scrollTo(0,0); if(soundOn&&Snd.tap) Snd.tap(); }
+function rsvAddOn(ds){ rsvDate=ds; rsvEdit(null); }
+/* 一覧は複数日をまたぐので、カードを触ったらその日に合わせてから開く */
+function rsvOpenEdit(ds,id){ rsvDate=ds; rsvEdit(id); }
+function rsvPickAt(ds,id){ rsvDate=ds; rsvVw="map"; rsvPickToggle(id); window.scrollTo(0,0); }
 /* 席選択モード: この予約IDが入っている間は、フロア図のタップで席を足す/外す */
 let rsvPick=null;
 function rsvPickToggle(id){
@@ -2274,7 +2317,7 @@ function rsvExit(){
   if(_rsvFrom==="admin"){ show("admin"); renderAll(); }
   else { show("emp"); renderEmpName(); renderAll(); }
 }
-function rsvView(v){ rsvVw=v; if(v!=="map") rsvPick=null; renderRsv(); if(soundOn&&Snd.tap) Snd.tap(); }
+function rsvView(v){ rsvVw=v; if(v!=="map") rsvPick=null; renderRsv(); window.scrollTo(0,0); if(soundOn&&Snd.tap) Snd.tap(); }
 function rsvDay(n){ rsvDate=addDays(rsvDate||rsvToday(), n); rsvPick=null; renderRsv(); if(soundOn&&Snd.tap) Snd.tap(); }
 function rsvPickDate(){
   openModal('<h3>📅 日付を選ぶ</h3><div class="field"><input type="date" id="rsvDpk" value="'+(rsvDate||rsvToday())+'"></div>'+
@@ -2288,24 +2331,87 @@ function rsvApplyDate(){
 }
 function renderRsv(){
   const ds=rsvDate||rsvToday(), d=new Date(ds);
+  const isMap=(rsvVw==="map");
   const lab=document.getElementById("rsvDateLabel");
   if(lab) lab.innerHTML=(d.getMonth()+1)+'月'+d.getDate()+'日 ('+WD[d.getDay()]+')<small>'+(ds===rsvToday()?'今日':'タップで日付変更')+'</small>';
-  document.getElementById("rsvSegMap").classList.toggle("on", rsvVw==="map");
-  document.getElementById("rsvSegList").classList.toggle("on", rsvVw==="list");
-  const list=rsvAll(ds), heads=list.reduce((a,r)=>a+(Number(r.n)||0),0);
-  const un=list.filter(r=>!(r.seats||[]).length).length;
+  document.getElementById("rsvSegMap").classList.toggle("on", isMap);
+  document.getElementById("rsvSegList").classList.toggle("on", !isMap);
+  /* 日付ナビはフロア図のときだけ。一覧のときは範囲の切り替えを出す */
+  const dayNav=document.querySelector("#rsv .rsv-head"); if(dayNav) dayNav.style.display=isMap?"flex":"none";
+  const rseg=document.getElementById("rsvRangeSeg"); if(rseg) rseg.style.display=isMap?"none":"flex";
+  ["week0","week1","week2","cal"].forEach(x=>{ const b=document.getElementById("rsvR_"+x); if(b) b.classList.toggle("on", !isMap && rsvRange===x); });
+  const mnav=document.getElementById("rsvMonthNav");
+  if(mnav){
+    const showCal=(!isMap && rsvRange==="cal");
+    mnav.style.display=showCal?"flex":"none";
+    if(showCal) document.getElementById("rsvMonthLabel").textContent=rsvCursor.getFullYear()+"年 "+(rsvCursor.getMonth()+1)+"月";
+  }
+  const addBtn=document.getElementById("rsvAddBtn");
+  if(addBtn){
+    addBtn.style.display=(!isMap && rsvRange==="cal")?"none":"block";
+    addBtn.textContent="＋ "+mdw(ds)+" に予約を追加";
+  }
+  /* 集計バッジ */
   const sum=document.getElementById("rsvSum");
   if(sum){
     let h="";
-    if(list.length){
-      h+='<span>'+list.length+'組</span><span>合計 '+heads+'名</span>';
-      if(un) h+='<span style="background:#f6e2e3;color:var(--rose)">席未定 '+un+'組</span>';
-    }else h+='<span>予約なし</span>';
-    if(isClosed(ds)) h+='<span style="background:#f6e2e3;color:var(--rose)">'+closeLabelFull(ds)+'</span>';
+    if(isMap){
+      const list=rsvAll(ds), heads=list.reduce((a,r)=>a+(Number(r.n)||0),0);
+      const un=list.filter(r=>!(r.seats||[]).length).length;
+      if(list.length){
+        h+='<span>'+list.length+'組</span><span>合計 '+heads+'名</span>';
+        if(un) h+='<span style="background:#f6e2e3;color:var(--rose)">席未定 '+un+'組</span>';
+      }else h+='<span>予約なし</span>';
+      if(isClosed(ds)) h+='<span style="background:#f6e2e3;color:var(--rose)">'+closeLabelFull(ds)+'</span>';
+    }else if(rsvRange!=="cal"){
+      const days=rsvRangeDates(), all=days.reduce((a,x)=>a.concat(rsvAll(x)),[]);
+      const heads=all.reduce((a,r)=>a+(Number(r.n)||0),0);
+      h+='<span>'+rsvRangeLabel()+'</span>'+(all.length?'<span>'+all.length+'組 '+heads+'名</span>':'<span>予約なし</span>');
+    }
     sum.innerHTML=h;
   }
   const el=document.getElementById("rsvArea"); if(!el) return;
-  el.innerHTML = rsvVw==="map" ? floorHtml(ds) : rsvListHtml(ds);
+  el.innerHTML = isMap ? floorHtml(ds) : (rsvRange==="cal" ? rsvCalHtml() : rsvRangeHtml());
+}
+function rsvRangeDates(){ return weekDates(rsvRange==="week1"?1:(rsvRange==="week2"?2:0)); }
+function rsvRangeLabel(){
+  const d=rsvRangeDates(), a=new Date(d[0]), b=new Date(d[d.length-1]);
+  return (a.getMonth()+1)+'/'+a.getDate()+'〜'+(b.getMonth()+1)+'/'+b.getDate();
+}
+function rsvRangeHtml(){
+  const days=rsvRangeDates();
+  let h="";
+  days.forEach(ds=>{ h+=rsvDaySection(ds); });
+  return h;
+}
+function rsvDaySection(ds){
+  const list=rsvAll(ds), d=new Date(ds);
+  const heads=list.reduce((a,r)=>a+(Number(r.n)||0),0);
+  const dc=d.getDay()===0?' sun':(d.getDay()===6?' sat':'');
+  let h='<div class="rsv-day'+(ds===rsvToday()?' today':'')+'"><div class="rd-head">'+
+    '<span class="rd-date'+dc+'" onclick="rsvGoDay(\''+ds+'\')">'+(d.getMonth()+1)+'/'+d.getDate()+'('+WD[d.getDay()]+')</span>'+
+    (isClosed(ds)?'<span class="rd-cl">'+closeLabelFull(ds)+'</span>':'')+
+    (list.length?'<span class="rd-cnt">'+list.length+'組 '+heads+'名</span>':'<span class="rd-non">予約なし</span>')+
+    '<button class="rd-add" onclick="rsvAddOn(\''+ds+'\')" title="この日に予約を追加">＋</button></div>';
+  list.forEach(r=>{ h+=rsvCardHtml(ds,r); });
+  return h+'</div>';
+}
+function rsvCalHtml(){
+  const y=rsvCursor.getFullYear(), m=rsvCursor.getMonth();
+  const days=new Date(y,m+1,0).getDate(), lead=leadSun(y,m);
+  let h='<div class="cal"><div class="dow">'+DOW_SUN_HEADER+'</div><div class="grid">';
+  for(let i=0;i<lead;i++) h+='<div></div>';
+  for(let d=1;d<=days;d++){
+    const ds=ymd(new Date(y,m,d)), list=rsvAll(ds), dt=new Date(y,m,d);
+    let cls="day";
+    if(dt.getDay()===0) cls+=" sun"; else if(dt.getDay()===6) cls+=" sat";
+    if(ds===rsvToday()) cls+=" today";
+    if(isClosed(ds)) cls+=" closed";
+    h+='<div class="'+cls+'" onclick="rsvGoDay(\''+ds+'\')"><span class="dn">'+d+'</span>'+
+       (list.length?'<span class="rc">'+list.length+'</span>':(isClosed(ds)?'<span class="clbl">休</span>':''))+'</div>';
+  }
+  h+='</div></div><div class="count-note">数字はその日の予約の組数です。日付をタップするとその日の席が見られます。</div>';
+  return h;
 }
 
 /* ---------- フロア図（手描きの配置に合わせている） ---------- */
@@ -2427,27 +2533,20 @@ function assignRow(ds,seat,r){
 }
 
 /* ---------- リスト ---------- */
-function rsvListHtml(ds){
-  const list=rsvAll(ds);
-  if(!list.length) return '<div class="empty-state"><div class="ic">📖</div>この日の予約はまだありません</div>';
-  let h="";
-  list.forEach(r=>{ h+=rsvCardHtml(ds,r); });
-  return h;
-}
 function rsvCardHtml(ds,r,inModal){
   const seats=seatSort(r.seats).map(s=>'<span class="rsv-chip'+(s[0]==="c"?' c':'')+'">'+seatLabel(s)+'</span>').join('');
   const sub=[];
-  if(r.tel) sub.push('☎ '+esc(r.tel));
   if(r.memo) sub.push(esc(r.memo));
   if(r.by) sub.push('<span style="opacity:.7">入力: '+esc(r.by)+'</span>');
   const picking=(rsvPick===r.id);
-  return '<div class="rsv-card'+(picking?' picking':'')+'"'+(inModal?'':' onclick="rsvEdit(\''+r.id+'\')"')+'>'+
+  return '<div class="rsv-card'+(picking?' picking':'')+'"'+(inModal?'':' onclick="rsvOpenEdit(\''+ds+'\',\''+r.id+'\')"')+'>'+
     '<div class="tm">'+esc(r.t||"--:--")+(r.t2?'<span class="t2">〜'+esc(r.t2)+'</span>':'')+'</div>'+
     '<div class="bd"><div class="nm">'+esc(r.name||"（名前なし）")+' 様'+(r.n?' <span style="font-weight:600;color:var(--coffee)">'+r.n+'名</span>':'')+'</div>'+
     (seats?'<div class="seats">'+seats+'</div>':'<div class="seats"><span class="rsv-chip" style="background:#f6e2e3;color:var(--rose)">🪑 席 未定</span></div>')+
+    (r.tel?'<div class="sub" style="margin-top:6px">'+telHtml(r.tel)+'</div>':'')+
     (sub.length?'<div class="sub">'+sub.join('　')+'</div>':'')+
     '</div>'+
-    (inModal?'':'<button class="ck'+(picking?' on':'')+'" onclick="event.stopPropagation();rsvPickToggle(\''+r.id+'\')" title="フロア図で席を選ぶ">'+
+    (inModal?'':'<button class="ck'+(picking?' on':'')+'" onclick="event.stopPropagation();rsvPickAt(\''+ds+'\',\''+r.id+'\')" title="フロア図で席を選ぶ">'+
       '<span class="i">'+(picking?'✓':'🪑')+'</span>'+(picking?'完了':'席を選ぶ')+'</button>')+
     '</div>';
 }
@@ -2464,12 +2563,22 @@ let _rsvT={h:18,m:0}, _rsvSpan=0;
    それも効かない端末では「かちっ」という音だけになる。 */
 let _hapSw;
 function hapticTick(){
-  try{ if(navigator.vibrate) navigator.vibrate(7); }catch(e){}
+  /* Android など振動APIがある端末 */
+  try{ if(navigator.vibrate) navigator.vibrate(8); }catch(e){}
+  /* iOS 17.4+ の裏技。click() でないと触覚が出ないことがあるので click を使う。
+     ※ iPhone の Safari には正式な触覚APIが無く、この方法も効かない端末がある。
+        その場合は下の「かちっ」音と目盛りのアニメーションだけになる。 */
   try{
     if(_hapSw===undefined) _hapSw=document.getElementById("hapticSw");
-    if(_hapSw) _hapSw.checked=!_hapSw.checked;
+    if(_hapSw) _hapSw.click();
   }catch(e){}
   if(Snd.tick) Snd.tick();
+  wheelPulse();
+}
+/* 触覚が出ない端末でも「1目盛り動いた」ことが分かるように、選択枠を一瞬だけ弾ませる */
+function wheelPulse(){
+  const b=document.querySelector(".wheel-band"); if(!b) return;
+  b.classList.remove("hit"); void b.offsetWidth; b.classList.add("hit");
 }
 function pad2(n){ return String(n).padStart(2,"0"); }
 function rsvTimeValue(){ return pad2(_rsvT.h)+":"+pad2(_rsvT.m); }
@@ -2479,6 +2588,12 @@ function rsvTimeEnd(){
   return pad2(Math.floor(t/60))+":"+pad2(t%60);
 }
 function rsvTimeText(r){ return (r.t||"--:--")+(r.t2?("〜"+r.t2):""); }
+/* 電話番号はタップでそのままかけられるようにする（カードのタップで編集が開かないよう伝播を止める） */
+function telHtml(tel){
+  const num=String(tel||"").replace(/[^0-9+]/g,"");
+  if(!num) return "";
+  return '<a class="tel-link" href="tel:'+esc(num)+'" onclick="event.stopPropagation()">☎ '+esc(tel)+'</a>';
+}
 function wheelCol(id, vals, fmt){
   let h='<div class="wheel-col" id="'+id+'"><div class="wheel-pad"></div>';
   vals.forEach(v=>{ h+='<div class="wi">'+fmt(v)+'</div>'; });
@@ -3148,15 +3263,15 @@ function confirmAddStaff(){
 function wageLabel(s){
   const w=wageOf(s);
   if(!w) return '<span style="color:var(--rose)">時給 未設定</span>';
-  return '時給 '+yen(w)+' ／ 深夜 '+yen(wageNOf(s))+(s.wageN?'':'（自動）');
+  return '時給 '+yen(w)+' ／ 深夜 '+(hasNightWage(s)? yen(wageNOf(s)) : '<span style="color:var(--rose)">未設定</span>');
 }
 function renameStaff(id){
   const s=staffById(id); if(!s)return;
   openModal('<h3>スタッフの設定</h3><p class="msub">名前と時給を編集します</p>'+
     '<div class="field"><label>名前</label><input type="text" id="mRen" maxlength="12" value="'+esc(s.name)+'"></div>'+
     '<div class="field"><label>時給（円）</label><input type="number" id="mWage" inputmode="numeric" min="0" step="10" placeholder="例: 1200" value="'+(s.wage||"")+'"></div>'+
-    '<div class="field"><label>深夜時給（円）※空欄なら自動計算</label><input type="number" id="mWageN" inputmode="numeric" min="0" step="10" placeholder="自動: '+wageNOf(s)+'" value="'+(s.wageN||"")+'">'+
-    '<p class="hint" style="margin-top:6px">空欄にすると「時給 × '+payCfg().nightRate+'倍」で自動計算します（⚙️設定で倍率変更可）。</p></div>'+
+    '<div class="field"><label>深夜時給（円）</label><input type="number" id="mWageN" inputmode="numeric" min="0" step="10" placeholder="例: '+(wageOf(s)?Math.round(wageOf(s)*1.25):1500)+'" value="'+(s.wageN||"")+'">'+
+    '<p class="hint" style="margin-top:6px">'+payCfg().nightFrom+'時〜'+payCfg().nightTo+'時に働いた分に使います。<b>空欄なら通常の時給と同額</b>で計算します（法定は通常の1.25倍以上）。</p></div>'+
     '<button class="btn btn-primary" onclick="confirmRename(\''+id+'\')">保存</button>');
   setTimeout(()=>{const i=document.getElementById("mRen");i.focus();i.select();},100);
 }
@@ -3189,7 +3304,7 @@ function syncSettingsForm(){
   const pc=payCfg(), sv=function(id,v){ const e=document.getElementById(id); if(e) e.value=v; };
   sv("setCloseDay",pc.closeDay); sv("setDayStart",pc.dayStart);
   sv("setNightFrom",pc.nightFrom); sv("setNightTo",pc.nightTo);
-  sv("setNightRate",pc.nightRate); sv("setRound",pc.round);
+  sv("setRound",pc.round);
   const qu=document.getElementById("tcQrUrl"); if(qu) qu.textContent=tcUrl();
   const gc=geoCfg();
   const go=document.getElementById("setGeoOn"); if(go) go.checked=gc.on;
@@ -3250,7 +3365,7 @@ const Snd = (function(){
   return {
     tap:function(){ if(soundOn) tone(880,0.09,"sine",0.09); },        // ぽん（一般ボタン）
     pick:function(){ if(soundOn) tone(1046,0.10,"triangle",0.10); },   // ぴこ（○△×など）
-    tick:function(){ if(soundOn) tone(1500,0.022,"triangle",0.045); },  // かちっ（ドラムの1目盛り）
+    tick:function(){ if(soundOn){ tone(2300,0.014,"square",0.030); tone(950,0.020,"sine",0.030); } },  // こつっ（ドラムの1目盛り）
     good:function(){ if(soundOn){ tone(784,0.10,"sine",0.11,0); tone(1175,0.14,"sine",0.11,0.085); } } // ぴろん（確定/保存）
   };
 })();
