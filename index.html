@@ -305,6 +305,65 @@ input.pin::placeholder{letter-spacing:10px}
 .ls-notemark{position:absolute;top:1px;right:2px;font-size:11px;line-height:1;pointer-events:none}
 .day .ls-add{position:absolute;bottom:1px;left:50%;transform:translateX(-50%);font-size:8px;font-weight:800;color:#fff;background:var(--green);border-radius:5px;padding:0 4px;line-height:1.5;pointer-events:none;white-space:nowrap}
 @media (orientation:portrait){#landscapeView{display:none !important}}
+
+/* ===================== タイムカード（打刻） ===================== */
+.tc-clock{font-size:42px;font-weight:700;color:var(--espresso);letter-spacing:1px;line-height:1.05;text-align:center;font-variant-numeric:tabular-nums}
+.tc-date{font-size:12.5px;color:var(--muted);text-align:center;margin:4px 0 18px}
+.tc-names{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tc-name{background:var(--milk);border:1.5px solid var(--line);border-radius:16px;padding:16px 8px;font-size:17px;font-weight:700;color:var(--espresso);cursor:pointer;font-family:inherit;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;align-items:center;gap:7px}
+.tc-name:active{transform:scale(.97)}
+.st{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.st-off{background:var(--foam);color:var(--muted)}
+.st-work{background:#e3efe7;color:var(--green)}
+.st-break{background:#f8ecd9;color:var(--amber)}
+.st-done{background:#e8edf6;color:var(--coffee)}
+.tc-card{background:var(--milk);border-radius:18px;padding:16px;box-shadow:var(--shadow-sm);margin-bottom:16px}
+.tc-who{display:flex;align-items:center;gap:10px}
+.tc-who .nm{font-size:19px;font-weight:700;color:var(--espresso);flex:1;min-width:0}
+.tc-elapsed{margin-top:10px;font-size:13.5px;color:var(--muted)}
+.tc-elapsed b{font-size:20px;color:var(--espresso);margin-left:4px;font-variant-numeric:tabular-nums}
+.tc-elapsed .sub{margin-left:10px}
+.tc-acts{display:flex;flex-direction:column;gap:12px}
+.tc-act{width:100%;padding:22px 12px;border-radius:18px;font-size:21px;font-weight:800;border:none;color:#fff;font-family:inherit;cursor:pointer;box-shadow:var(--shadow);letter-spacing:1px}
+.tc-act:active{transform:scale(.97)}
+.tc-act.in,.tc-act.be{background:linear-gradient(135deg,#4f8a70,#3a6b56)}
+.tc-act.bs{background:linear-gradient(135deg,#cf9440,#a8752f)}
+.tc-act.out{background:linear-gradient(135deg,#2c4f80,#152742)}
+.tc-fin{text-align:center;padding:26px 16px;background:var(--milk);border-radius:18px;box-shadow:var(--shadow-sm);color:var(--coffee);font-weight:600;line-height:1.8}
+.tc-sub{text-align:center;margin-top:14px;min-height:8px}
+.linkbtn{background:none;border:none;color:var(--muted);font-size:12.5px;text-decoration:underline;font-family:inherit;cursor:pointer;padding:6px}
+.tc-log{background:var(--milk);border-radius:14px;box-shadow:var(--shadow-sm);padding:2px 14px}
+.tc-log .tl{display:flex;align-items:center;gap:6px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.tc-log .tl:last-child{border-bottom:none}
+.tc-log .tl .k{color:var(--ink);flex:1}
+.tc-log .tl .t{font-weight:700;color:var(--espresso);font-variant-numeric:tabular-nums}
+.tc-foot{display:flex;gap:8px;margin-top:18px;justify-content:center;flex-wrap:wrap}
+.tc-flash{text-align:center;padding:26px 18px 30px;background:var(--milk);border-radius:22px;box-shadow:var(--shadow)}
+.tc-flash .ic{font-size:52px;line-height:1}
+.tc-flash .big{font-size:52px;font-weight:800;color:var(--espresso);letter-spacing:2px;margin:6px 0 2px;font-variant-numeric:tabular-nums}
+.tc-flash .ttl{font-size:17px;font-weight:700;color:var(--espresso)}
+.tc-flash .sub2{font-size:13.5px;color:var(--muted);margin-top:6px}
+.tc-flash .tot{margin-top:14px;font-size:14px;color:var(--coffee)}
+.tc-flash .tot b{font-size:19px}
+.tc-edit .ter{display:flex;gap:6px;align-items:center;margin-bottom:8px}
+.tc-edit .ter select{flex:0 0 104px;padding:9px 4px;font-size:12.5px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);font-family:inherit;color:var(--ink)}
+.tc-edit .ter input[type=date]{flex:1;min-width:0;padding:9px 4px;font-size:12.5px}
+.tc-edit .ter input[type=time]{flex:0 0 88px;padding:9px 4px;font-size:12.5px}
+.tc-edit .ter .del{flex:0 0 38px;height:38px;border:none;background:var(--foam);border-radius:10px;font-size:15px;cursor:pointer}
+.agg-range{display:flex;gap:8px;align-items:center}
+.agg-range input{flex:1;min-width:0;padding:10px 6px;font-size:13px}
+.agg-range span{color:var(--muted);font-size:13px}
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:14px;box-shadow:var(--shadow-sm);background:var(--milk);margin-top:12px}
+.tbl{border-collapse:collapse;width:100%;font-size:12.5px;min-width:470px}
+.tbl th,.tbl td{padding:9px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--line)}
+.tbl th{background:var(--foam);color:var(--espresso);font-size:11px;font-weight:700}
+.tbl td.nm,.tbl th.nm{text-align:left;font-weight:600;color:var(--espresso);position:sticky;left:0;background:var(--milk)}
+.tbl th.nm{background:var(--foam)}
+.tbl tfoot td{font-weight:800;background:var(--paper);color:var(--espresso);border-bottom:none}
+.tbl tfoot td.nm{background:var(--paper)}
+.tab-badge{display:none;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#e53e3e;color:#fff;font-size:10px;font-weight:800;line-height:16px;margin-left:3px;vertical-align:middle}
+.qr-box img{width:220px;max-width:74%;height:auto;border-radius:10px;border:1px solid var(--line);background:#fff}
+.wage-tag{font-size:11px;font-weight:700;color:var(--coffee);background:var(--foam);padding:2px 7px;border-radius:20px}
 </style>
 </head>
 <body>
@@ -323,7 +382,7 @@ input.pin::placeholder{letter-spacing:10px}
         <label id="pwLabel">従業員パスワード（数字4桁）</label>
         <input type="password" id="pwInput" class="pin" placeholder="••••" autocomplete="off" inputmode="numeric" pattern="[0-9]*" maxlength="4">
       </div>
-      <button class="btn btn-primary" onclick="doLogin()">出勤する 🏮</button>
+      <button class="btn btn-primary" onclick="doLogin()">ログイン</button>
       <label class="remember"><input type="checkbox" id="rememberChk">ログインしたままにする</label>
       <div class="err" id="loginErr"></div>
       <div class="hint" id="loginHint"></div>
@@ -346,6 +405,7 @@ input.pin::placeholder{letter-spacing:10px}
         <div class="seg" style="margin-bottom:14px">
           <button id="empSegInput" class="on" onclick="empView('input')">✏️ 希望入力</button>
           <button id="empSegSched" onclick="empView('sched')">📅 確定シフト</button>
+          <button id="empSegTc" onclick="openTimecard(currentEmpId)">⏰ 打刻</button>
         </div>
         <div class="monthnav">
           <button onclick="empMonth(-1)">‹</button>
@@ -378,6 +438,21 @@ input.pin::placeholder{letter-spacing:10px}
     </div>
   </section>
 
+  <!-- ===== TIMECARD ===== -->
+  <section id="tc" class="screen">
+    <div class="topbar">
+      <img src="logo-light.png" alt="食・酒・楽 笑っと" style="height:23px;width:auto;display:block;flex-shrink:0">
+      <h1 class="tb-page">タイムカード<span class="sub">打刻</span></h1>
+      <button class="dev-btn snd-btn" onclick="toggleSound()" title="操作音のON/OFF">🔊</button>
+      <button class="logout-btn" onclick="tcExit()">‹ 戻る</button>
+    </div>
+    <div class="body">
+      <div class="tc-clock" id="tcClock">--:--</div>
+      <div class="tc-date" id="tcDate"></div>
+      <div id="tcBody"></div>
+    </div>
+  </section>
+
   <!-- ===== ADMIN ===== -->
   <section id="admin" class="screen">
     <div class="topbar">
@@ -392,6 +467,7 @@ input.pin::placeholder{letter-spacing:10px}
       <div id="adminNotice"></div>
       <div class="tabs">
         <button id="tabShift" class="on" onclick="adminTab('shift')">👥 シフト</button>
+        <button id="tabTime" onclick="adminTab('time')">⏰ 勤怠<span class="tab-badge" id="tabTimeBadge"></span></button>
         <button id="tabClosed" onclick="adminTab('closed')">🚫 店休</button>
         <button id="tabSet" onclick="adminTab('set')">⚙️</button>
       </div>
@@ -406,6 +482,16 @@ input.pin::placeholder{letter-spacing:10px}
       <div id="svShift" class="subview active">
         <div class="sec-title">👥 シフト編成・出勤者</div>
         <div id="shiftArea"></div>
+      </div>
+
+      <!-- Timecard (勤怠) -->
+      <div id="svTime" class="subview">
+        <div class="seg" style="margin-bottom:14px">
+          <button id="tvb_today" class="on" onclick="timeTab('today')">今日の勤怠</button>
+          <button id="tvb_req" onclick="timeTab('req')">修正依頼</button>
+          <button id="tvb_agg" onclick="timeTab('agg')">💰 集計</button>
+        </div>
+        <div id="timeArea"></div>
       </div>
 
       <!-- Closures -->
@@ -434,6 +520,50 @@ input.pin::placeholder{letter-spacing:10px}
         <div class="sec-title" style="margin-top:26px">👤 スタッフ管理 <span id="staffCount" style="margin-left:auto;color:var(--muted);font-weight:600"></span></div>
         <div id="staffManage" class="list"></div>
         <button class="btn btn-ghost btn-sm" style="margin-top:12px" onclick="addStaffPrompt()">＋ スタッフを追加</button>
+
+        <div class="sec-title" style="margin-top:26px">💰 給与・勤怠の設定</div>
+        <div class="card" style="padding:16px">
+          <div class="field"><label>給与の締め日</label>
+            <select id="setCloseDay">
+              <option value="31">末日締め</option>
+              <option value="5">5日締め</option>
+              <option value="10">10日締め</option>
+              <option value="15">15日締め</option>
+              <option value="20">20日締め</option>
+              <option value="25">25日締め</option>
+            </select></div>
+          <div class="field"><label>営業日の切り替わり時刻</label>
+            <select id="setDayStart">
+              <option value="0">0時（日付どおり）</option><option value="3">朝3時</option>
+              <option value="4">朝4時</option><option value="5">朝5時</option>
+              <option value="6">朝6時</option><option value="7">朝7時</option>
+            </select>
+            <p class="hint" style="margin-top:6px">深夜営業のため、この時刻より前の打刻は<b>前日の勤務</b>として集計します。（例: 20時出勤→翌2時退勤 は1日ぶん）</p></div>
+          <div class="field"><label>深夜時間帯（割増の対象）</label>
+            <div style="display:flex;gap:8px;align-items:center">
+              <select id="setNightFrom" style="flex:1"><option value="21">21時</option><option value="22">22時</option><option value="23">23時</option></select>
+              <span style="color:var(--muted)">〜</span>
+              <select id="setNightTo" style="flex:1"><option value="4">朝4時</option><option value="5">朝5時</option><option value="6">朝6時</option></select>
+            </div></div>
+          <div class="field"><label>深夜時給を自動計算する倍率（時給 × ○）</label>
+            <input type="number" id="setNightRate" step="0.05" min="1" max="3" placeholder="1.25">
+            <p class="hint" style="margin-top:6px">スタッフごとに<b>深夜時給を直接入力</b>できます。空欄の人だけこの倍率で自動計算します（法定は1.25倍以上）。</p></div>
+          <div class="field"><label>勤務時間の端数</label>
+            <select id="setRound">
+              <option value="1">1分単位（そのまま・推奨）</option>
+              <option value="5">5分単位で四捨五入</option>
+              <option value="15">15分単位（出勤は切上げ・退勤は切捨て）</option>
+            </select></div>
+          <button class="btn btn-primary btn-sm" onclick="savePayCfg()">給与設定を保存</button>
+        </div>
+
+        <div class="sec-title" style="margin-top:26px">📱 打刻用QRコード</div>
+        <div class="card qr-box" style="padding:16px;text-align:center">
+          <img src="qr-timecard.png" alt="打刻用QRコード">
+          <p class="hint" style="margin-top:10px">このQRを<b>厨房に貼って</b>ください。スマホのカメラで読むと、パスワードなしで打刻画面が開きます。</p>
+          <div style="word-break:break-all;font-size:11px;color:var(--muted);margin-top:8px" id="tcQrUrl"></div>
+          <button class="btn btn-ghost btn-sm" style="margin-top:12px" onclick="openTimecard(null)">⏰ 打刻画面を開いてみる</button>
+        </div>
 
         <div class="sec-title" style="margin-top:26px">🔑 パスワード（数字4桁）</div>
         <div class="card" style="padding:16px">
@@ -505,7 +635,7 @@ const LS_KEY = "ettoShift_v1";
 const ROOM_KEY = "ettoShift_room";
 const PREF_KEY = "ettoShift_remember";  // "1"/"0" : ログイン保持の希望
 const SESS_KEY = "ettoShift_session";   // {role, empId} : 自動ログイン用
-const APP_VERSION = "2026.09.06-1";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
+const APP_VERSION = "2026.09.06-2";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
 let soundOn = localStorage.getItem("ettoShift_sound")!=="0";  // 操作音 ON/OFF（この端末ごと・既定ON）
 /* 管理者ログイン通知（開発者だけ受信）。GASをデプロイしたら /exec URL をここに貼る。空なら何もしない */
 const LOGIN_NOTIFY_URL = "";   // ★笑っとはメール通知なし（通知は亜子だけ）。使いたくなったらGASの /exec URL を貼る
@@ -539,7 +669,7 @@ const MK = { maru:"○", sankaku:"△", batsu:"×" };
 
 /* ===================== STORAGE ===================== */
 function blankStore(){
-  return { staff:[], avail:{}, schedule:{}, closures:{}, opens:{}, events:{}, dayNotes:{}, notice:"", loginLog:[], settings:{empPw:DEFAULTS.empPw, adminPw:DEFAULTS.adminPw} };
+  return { staff:[], avail:{}, schedule:{}, closures:{}, opens:{}, events:{}, dayNotes:{}, notice:"", loginLog:[], tc:{}, tcReq:[], settings:{empPw:DEFAULTS.empPw, adminPw:DEFAULTS.adminPw} };
 }
 function loadLocal(){
   try{ const r=localStorage.getItem(LS_KEY); if(r) return JSON.parse(r); }catch(e){}
@@ -566,6 +696,10 @@ function migrate(s){
   s.settings = s.settings || {};
   if(!/^\d{4}$/.test(s.settings.empPw||"")) s.settings.empPw = DEFAULTS.empPw;    // 4桁数字に統一
   if(!/^\d{4}$/.test(s.settings.adminPw||"")) s.settings.adminPw = DEFAULTS.adminPw;
+  /* 勤怠（タイムカード） */
+  s.tc = s.tc || {};
+  if(!Array.isArray(s.tcReq)) s.tcReq = [];
+  s.settings.pay = Object.assign({}, PAY_DEF, s.settings.pay || {});
   return s;
 }
 
@@ -725,7 +859,7 @@ function confirmLogout(){
 }
 /* 従業員の表示状態を既定へ戻す（ログイン/ログアウト時。共有端末で前の人の選択が残らないように） */
 function resetEmpView(){ empViewMode="input"; empInputMode="week0"; empSchedDisp="week0"; empSchedScope="mine"; empCursor=new Date(); }
-function logout(){ resetEmpView(); localStorage.removeItem(SESS_KEY); currentEmpId=null; isDev=false; show("login"); setRole("emp"); }
+function logout(){ resetEmpView(); if(typeof tcStopClock==="function"){ tcStopClock(); tcWho=null; tcFromQR=false; _tcFlash=null; } localStorage.removeItem(SESS_KEY); currentEmpId=null; isDev=false; show("login"); setRole("emp"); }
 function unreadLogCount(){
   const lastReadT=Number(localStorage.getItem(LOG_READ_KEY)||0);
   return (store.loginLog||[]).filter(function(e){return !e.dev && (e.t||0)>lastReadT;}).length;
@@ -1304,6 +1438,453 @@ function clearMark(ds){
   if(had && NOTIFY_STAFF.indexOf(_nm)>=0){ var _dt=new Date(ds), _dl=(_dt.getMonth()+1)+"/"+_dt.getDate()+"("+WD[_dt.getDay()]+")"; notifyEmpChange(_nm, _dl+" の希望を取消"); }
 }
 
+/* =====================================================================
+   勤怠（タイムカード）
+   厨房のQR → ?tc=1 で打刻画面。状態に応じて押せるボタンだけを出す。
+   営業日は「切り替わり時刻（既定 朝5時）」で区切るので、深夜営業の日またぎも1日分になる。
+   ===================================================================== */
+const PAY_DEF = { closeDay:31, dayStart:5, nightFrom:22, nightTo:5, nightRate:1.25, round:1 };
+function payCfg(){
+  const p=(store && store.settings && store.settings.pay) || {};
+  const n=function(v,d){ v=Number(v); return isFinite(v)?v:d; };
+  return { closeDay:n(p.closeDay,PAY_DEF.closeDay), dayStart:n(p.dayStart,PAY_DEF.dayStart),
+           nightFrom:n(p.nightFrom,PAY_DEF.nightFrom), nightTo:n(p.nightTo,PAY_DEF.nightTo),
+           nightRate:n(p.nightRate,PAY_DEF.nightRate), round:n(p.round,PAY_DEF.round) };
+}
+const TCK = { in:{l:"出勤",ic:"🏮"}, bs:{l:"休憩開始",ic:"☕"}, be:{l:"休憩終了",ic:"🔁"}, out:{l:"退勤",ic:"🌙"} };
+const TCS = { off:{l:"未出勤",c:"st-off"}, work:{l:"勤務中",c:"st-work"}, brk:{l:"休憩中",c:"st-break"}, done:{l:"退勤済",c:"st-done"} };
+
+/* ---------- 日付・時刻 ---------- */
+function bizDateOf(ms){ const d=new Date(ms); if(d.getHours()<payCfg().dayStart) d.setDate(d.getDate()-1); return ymd(d); }
+function tcToday(){ return bizDateOf(Date.now()); }
+function hhmm(ms){ const d=new Date(ms); return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"); }
+function hm(min){ min=Math.max(0,Math.round(min)); return Math.floor(min/60)+":"+String(min%60).padStart(2,"0"); }
+function yen(n){ return "¥"+Math.round(Number(n)||0).toLocaleString("ja-JP"); }
+function mdw(ds){ const d=new Date(ds); return (d.getMonth()+1)+"/"+d.getDate()+"("+WD[d.getDay()]+")"; }
+
+/* ---------- 打刻データ ---------- */
+function tcRec(bd,sid){ return ((store.tc||{})[bd]||{})[sid]||null; }
+function tcPunches(bd,sid){ const r=tcRec(bd,sid); return (r&&Array.isArray(r.p))?r.p.slice().sort((a,b)=>a.t-b.t):[]; }
+function tcState(bd,sid){
+  const p=tcPunches(bd,sid); if(!p.length) return "off";
+  const k=p[p.length-1].k;
+  return (k==="in"||k==="be")?"work":(k==="bs"?"brk":"done");
+}
+function tcBucket(bd,sid){
+  store.tc=store.tc||{}; store.tc[bd]=store.tc[bd]||{}; store.tc[bd][sid]=store.tc[bd][sid]||{p:[]};
+  return store.tc[bd][sid];
+}
+function tcUniqT(rec,t){ while(rec.p.some(e=>e.t===t)) t+=1; return t; }   /* 同時刻の重複回避。1msずつずらす（1秒だと後の打刻を追い越して順序が狂う） */
+function tcPunch(sid,k,at,by){
+  const t=at||Date.now(), bd=bizDateOf(t), rec=tcBucket(bd,sid);
+  rec.p.push({t:tcUniqT(rec,t), k:k, by:by||"self"});
+  rec.p.sort((a,b)=>a.t-b.t);
+  persist(); return bd;
+}
+
+/* ---------- 集計 ---------- */
+function tcSegs(p, nowMs){
+  let work=[], brk=[], cur=null, bcur=null;
+  p.forEach(function(e){
+    if(e.k==="in"||e.k==="be"){ if(bcur!==null){ brk.push([bcur,e.t]); bcur=null; } if(cur===null) cur=e.t; }
+    else if(e.k==="bs"){ if(cur!==null){ work.push([cur,e.t]); cur=null; } if(bcur===null) bcur=e.t; }
+    else if(e.k==="out"){ if(cur!==null){ work.push([cur,e.t]); cur=null; } if(bcur!==null){ brk.push([bcur,e.t]); bcur=null; } }
+  });
+  const open=(cur!==null||bcur!==null);
+  if(nowMs){ if(cur!==null) work.push([cur,nowMs]); if(bcur!==null) brk.push([bcur,nowMs]); }
+  return {work:work, brk:brk, open:open};
+}
+/* 端数処理: 15分=出勤切上げ/退勤切捨て、5分=四捨五入、1分=そのまま */
+function rndS(ms){ const r=payCfg().round; if(r<=1) return ms; const u=r*60000; return r>=15?Math.ceil(ms/u)*u:Math.round(ms/u)*u; }
+function rndE(ms){ const r=payCfg().round; if(r<=1) return ms; const u=r*60000; return r>=15?Math.floor(ms/u)*u:Math.round(ms/u)*u; }
+function segMin(segs){ let t=0; segs.forEach(g=>{ t+=Math.max(0, rndE(g[1])-rndS(g[0])); }); return Math.floor(t/60000); }
+/* 深夜帯（既定22時〜翌5時）に重なる分数 */
+function segNightMin(segs){
+  const c=payCfg(); let tot=0;
+  segs.forEach(function(g){
+    const a=rndS(g[0]), b=rndE(g[1]); if(b<=a) return;
+    const d0=new Date(a); d0.setHours(0,0,0,0);
+    for(let i=-1;i<=2;i++){
+      const base=new Date(d0); base.setDate(base.getDate()+i);
+      const ws=new Date(base); ws.setHours(c.nightFrom,0,0,0);
+      const we=new Date(base); we.setHours(c.nightTo,0,0,0);
+      if(c.nightTo<=c.nightFrom) we.setDate(we.getDate()+1);
+      tot += Math.max(0, Math.min(b,we.getTime()) - Math.max(a,ws.getTime()));
+    }
+  });
+  return Math.floor(tot/60000);
+}
+function tcDay(bd,sid,live){
+  const p=tcPunches(bd,sid); if(!p.length) return null;
+  const sg=tcSegs(p, live?Date.now():0);
+  const w=segMin(sg.work);
+  return { work:w, night:Math.min(w, segNightMin(sg.work)), brk:segMin(sg.brk), open:sg.open };
+}
+function wageOf(s){ const w=Number(s&&s.wage)||0; return w>0?Math.round(w):0; }
+function wageNOf(s){ const n=Number(s&&s.wageN)||0; return n>0?Math.round(n):Math.round(wageOf(s)*payCfg().nightRate); }
+
+/* 締め期間（offset 0=今期 / -1=前期） */
+function payPeriod(offset){
+  const cd=payCfg().closeDay, now=new Date(); now.setHours(12,0,0,0);
+  let s,e;
+  if(cd>=31){
+    const m=new Date(now.getFullYear(), now.getMonth()+(offset||0), 1);
+    s=new Date(m.getFullYear(), m.getMonth(), 1);
+    e=new Date(m.getFullYear(), m.getMonth()+1, 0);
+  }else{
+    const base=new Date(now.getFullYear(), now.getMonth(), 1);
+    if(now.getDate()>cd) base.setMonth(base.getMonth()+1);
+    base.setMonth(base.getMonth()+(offset||0));
+    e=new Date(base.getFullYear(), base.getMonth(), cd);
+    s=new Date(base.getFullYear(), base.getMonth()-1, cd+1);
+  }
+  return {s:ymd(s), e:ymd(e)};
+}
+function tcAggregate(sd,ed){
+  const days=Object.keys(store.tc||{}).filter(bd=>bd>=sd&&bd<=ed);
+  return store.staff.map(function(s){
+    let w=0,n=0,b=0,d=0,open=0;
+    days.forEach(function(bd){
+      const r=tcDay(bd,s.id,false); if(!r) return;
+      if(r.work>0||r.brk>0) d++;
+      w+=r.work; n+=r.night; b+=r.brk; if(r.open) open++;
+    });
+    const wg=wageOf(s), wn=wageNOf(s);
+    return { s:s, days:d, work:w, night:n, brk:b, wage:wg, wageN:wn, open:open,
+             pay: wg? Math.round((w-n)/60*wg + n/60*wn) : 0 };
+  });
+}
+
+/* ---------- 打刻画面 ---------- */
+let tcWho=null, tcFromQR=false, _tcClock=null, _tcFlash=null, _tcFlashT=null;
+function tcUrl(){ return location.origin+location.pathname.replace(/index\.html$/,"")+"?tc=1"; }
+function openTimecard(sid, fromQR){
+  tcFromQR=!!fromQR; tcWho=sid||null; _tcFlash=null; clearTimeout(_tcFlashT);
+  show("tc"); renderTc(); tcStartClock();
+}
+function tcExit(){
+  tcStopClock(); _tcFlash=null; clearTimeout(_tcFlashT);
+  if(tcFromQR){ tcFromQR=false; tcWho=null; show("login"); setRole("emp"); return; }
+  if(role==="admin"){ show("admin"); renderAll(); }
+  else { show("emp"); renderEmpName(); renderAll(); }
+}
+function tcStartClock(){ tcStopClock(); tcTick(); _tcClock=setInterval(tcTick,1000); }
+function tcStopClock(){ if(_tcClock){ clearInterval(_tcClock); _tcClock=null; } }
+function tcTick(){
+  const c=document.getElementById("tcClock"); if(!c) return;
+  if(!document.getElementById("tc").classList.contains("active")){ tcStopClock(); return; }
+  const d=new Date();
+  c.textContent=String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
+  const dt=document.getElementById("tcDate");
+  if(dt) dt.textContent=mdw(tcToday())+" の営業日";
+  const el=document.getElementById("tcElapsed");
+  if(el && tcWho){ const r=tcDay(tcToday(),tcWho,true); el.textContent=r?hm(r.work):"0:00"; }
+}
+function renderTc(){
+  const el=document.getElementById("tcBody"); if(!el) return;
+  if(_tcFlash){ el.innerHTML=_tcFlash; return; }
+  el.innerHTML = tcWho ? tcPersonHtml() : tcNamesHtml();
+}
+function tcNamesHtml(){
+  if(!store.staff.length) return '<div class="empty-state"><div class="ic">🙋</div>スタッフが登録されていません。<br>店長に連絡してください。</div>';
+  const bd=tcToday();
+  let h='<div class="sec-title">🙋 自分の名前をタップ</div><div class="tc-names">';
+  store.staff.forEach(function(s){
+    const st=tcState(bd,s.id);
+    h+='<button class="tc-name" onclick="tcPick(\''+s.id+'\')">'+esc(s.name)+'<span class="st '+TCS[st].c+'">'+TCS[st].l+'</span></button>';
+  });
+  return h+'</div>';
+}
+function tcPick(id){ tcWho=id||null; _tcFlash=null; renderTc(); if(soundOn&&Snd.tap) Snd.tap(); }
+function tcBtn(k,ic,label){ return '<button class="tc-act '+k+'" onclick="tcAsk(\''+k+'\')">'+ic+' '+label+'</button>'; }
+function tcPersonHtml(){
+  const bd=tcToday(), s=staffById(tcWho);
+  if(!s){ tcWho=null; return tcNamesHtml(); }
+  const st=tcState(bd,tcWho), sum=tcDay(bd,tcWho,true);
+  let h='<div class="tc-card"><div class="tc-who"><span class="nm">'+esc(s.name)+' さん</span><span class="st '+TCS[st].c+'">'+TCS[st].l+'</span></div>';
+  if(sum) h+='<div class="tc-elapsed">本日の実働<b id="tcElapsed">'+hm(sum.work)+'</b>'+(sum.brk?'<span class="sub">休憩 '+hm(sum.brk)+'</span>':'')+'</div>';
+  h+='</div><div class="tc-acts">';
+  if(st==="off")  h+=tcBtn("in","🏮","出勤する");
+  if(st==="work"){ h+=tcBtn("bs","☕","休憩に入る")+tcBtn("out","🌙","退勤する"); }
+  if(st==="brk")   h+=tcBtn("be","🔁","休憩から戻る");
+  if(st==="done") h+='<div class="tc-fin">🌙 本日は退勤済みです。<br>おつかれさまでした。</div>';
+  h+='</div><div class="tc-sub">';
+  if(st==="brk")  h+='<button class="linkbtn" onclick="tcAsk(\'out\')">休憩から戻らずに退勤する</button>';
+  if(st==="done") h+='<button class="linkbtn" onclick="tcAsk(\'in\')">もう一度出勤する</button>';
+  h+='</div>';
+  const p=tcPunches(bd,tcWho);
+  if(p.length){
+    h+='<div class="sec-title" style="margin-top:24px">🧾 本日の打刻</div><div class="tc-log">';
+    p.forEach(function(e){
+      h+='<div class="tl"><span class="k">'+TCK[e.k].ic+' '+TCK[e.k].l+'</span>'+
+         (e.by==="admin"?'<span class="pill admin">店長訂正</span>':'')+
+         '<span class="t">'+hhmm(e.t)+'</span></div>';
+    });
+    h+='</div>';
+  }
+  h+='<div class="tc-foot"><button class="btn btn-ghost btn-sm" onclick="tcPick(null)">👥 別の人に交代</button>'+
+     '<button class="btn btn-ghost btn-sm" onclick="tcReportOpen()">⚠️ 打刻を間違えた</button></div>';
+  return h;
+}
+function tcAsk(k){
+  const bd=tcToday(), s=staffById(tcWho); if(!s) return;
+  if(k==="out"){
+    const sum=tcDay(bd,tcWho,true)||{work:0,brk:0};
+    openModal('<h3>🌙 退勤しますか？</h3><p class="msub">'+esc(s.name)+' さん ／ ただいま '+hhmm(Date.now())+'</p>'+
+      '<div class="kv"><span class="k">本日の実働</span><span class="v" style="font-weight:700;font-size:16px;color:var(--espresso)">'+hm(sum.work)+'</span></div>'+
+      (sum.brk?'<div class="kv"><span class="k">休憩</span><span class="v">'+hm(sum.brk)+'</span></div>':'')+
+      '<div style="display:flex;gap:10px;margin-top:18px"><button class="btn btn-ghost" onclick="closeModal()">やめる</button>'+
+      '<button class="btn btn-primary" onclick="closeModal();tcDo(\'out\')">退勤する</button></div>');
+    return;
+  }
+  if(k==="in" && tcState(bd,tcWho)==="done"){
+    openModal('<h3>もう一度出勤しますか？</h3><p class="msub">すでに退勤済みです。この後も続けて働く場合だけ押してください。</p>'+
+      '<div style="display:flex;gap:10px"><button class="btn btn-ghost" onclick="closeModal()">やめる</button>'+
+      '<button class="btn btn-primary" onclick="closeModal();tcDo(\'in\')">出勤する</button></div>');
+    return;
+  }
+  tcDo(k);
+}
+const TCMSG = { in:["🏮","出勤しました","いってらっしゃい！"], bs:["☕","休憩に入りました","ゆっくり休んでください"],
+                be:["🔁","休憩から戻りました","後半もよろしくお願いします"], out:["🌙","退勤しました","おつかれさまでした！"] };
+function tcDo(k){
+  const s=staffById(tcWho); if(!s) return;
+  const now=Date.now(), bd=tcPunch(tcWho,k,now,"self");
+  if(soundOn&&Snd.good) Snd.good();
+  const sum=tcDay(bd,tcWho,true)||{work:0,brk:0}, m=TCMSG[k];
+  _tcFlash='<div class="tc-flash"><div class="ic">'+m[0]+'</div><div class="big">'+hhmm(now)+'</div>'+
+    '<div class="ttl">'+esc(s.name)+' さん '+m[1]+'</div><div class="sub2">'+m[2]+'</div>'+
+    (k==="out"?'<div class="tot">本日の実働 <b>'+hm(sum.work)+'</b>'+(sum.brk?'（休憩 '+hm(sum.brk)+'）':'')+'</div>':'')+
+    '<button class="btn btn-primary" style="margin-top:22px" onclick="tcFlashEnd()">OK</button></div>';
+  renderTc();
+  clearTimeout(_tcFlashT); _tcFlashT=setTimeout(tcFlashEnd, 7000);
+}
+function tcFlashEnd(){ clearTimeout(_tcFlashT); _tcFlash=null; tcWho=null; renderTc(); }
+
+/* ---------- 打刻ミスの報告 ---------- */
+function tcReportOpen(){
+  const s=staffById(tcWho);
+  openModal('<h3>⚠️ 打刻の間違いを報告</h3><p class="msub">'+(s?esc(s.name)+' さん ／ ':'')+'店長に届きます。時刻を直してもらえます。</p>'+
+    '<div class="field"><textarea id="tcRepMsg" rows="3" placeholder="例: 出勤を押し忘れました。本当は18:00に出勤しています。"></textarea></div>'+
+    '<div style="display:flex;gap:10px"><button class="btn btn-ghost" onclick="closeModal()">やめる</button>'+
+    '<button class="btn btn-primary" onclick="tcReportSend()">店長に報告する</button></div>');
+  setTimeout(()=>{const i=document.getElementById("tcRepMsg"); if(i) i.focus();},100);
+}
+function tcReportSend(){
+  const el=document.getElementById("tcRepMsg"), m=(el?el.value:"").trim();
+  if(!m){ toast("内容を入力してください"); return; }
+  store.tcReq=store.tcReq||[];
+  store.tcReq.push({id:uid(), sid:tcWho, d:tcToday(), t:Date.now(), msg:m.slice(0,300), done:false});
+  persist(); closeModal(); if(soundOn&&Snd.good) Snd.good();
+  toast("店長に報告しました"); renderTc();
+}
+
+/* ---------- 管理者: 勤怠タブ ---------- */
+let timeView="today", timeDate="", aggOffset=0, aggCustom=null;
+function timeTab(v){ timeView=v; renderTime(); }
+function tcOpenReqs(){ return (store.tcReq||[]).filter(r=>!r.done); }
+function renderTimeBadge(){
+  const b=document.getElementById("tabTimeBadge"); if(!b) return;
+  const n=tcOpenReqs().length;
+  b.textContent=n; b.style.display=n?"inline-block":"none";
+}
+function renderTime(){
+  renderTimeBadge();
+  ["today","req","agg"].forEach(function(x){
+    const b=document.getElementById("tvb_"+x); if(b) b.classList.toggle("on", x===timeView);
+  });
+  const el=document.getElementById("timeArea"); if(!el) return;
+  el.innerHTML = timeView==="today" ? timeTodayHtml() : (timeView==="req" ? timeReqHtml() : timeAggHtml());
+}
+function setTimeDate(v){ timeDate=v||""; renderTime(); }
+function timeTodayHtml(){
+  const bd=timeDate||tcToday();
+  let h='<div class="card" style="padding:14px;margin-bottom:14px"><div class="field" style="margin:0"><label>表示する営業日</label>'+
+        '<input type="date" value="'+bd+'" onchange="setTimeDate(this.value)"></div>'+
+        (timeDate?'<button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="setTimeDate(\'\')">今日に戻す</button>':'')+'</div>';
+  h+='<div class="sec-title">⏰ '+mdw(bd)+' の勤怠</div>';
+  if(!store.staff.length) return h+'<div class="empty-state"><div class="ic">🙋</div>スタッフ未登録</div>';
+  const live=(bd===tcToday());
+  let tw=0, any=false;
+  h+='<div class="list">';
+  store.staff.forEach(function(s){
+    const st=live?tcState(bd,s.id):null, r=tcDay(bd,s.id,live);
+    if(r){ any=true; tw+=r.work; }
+    const badge = live ? '<span class="st '+TCS[st].c+'">'+TCS[st].l+'</span>'
+                       : (r? '<span class="st '+(r.open?"st-break":"st-done")+'">'+(r.open?"未退勤":"記録あり")+'</span>' : '<span class="st st-off">なし</span>');
+    h+='<div class="row" onclick="tcEditDay(\''+bd+'\',\''+s.id+'\')" style="cursor:pointer">'+
+       '<div class="av">'+esc(initials(s.name))+'</div>'+
+       '<div class="meta"><div class="nm">'+esc(s.name)+'</div><div class="desc">'+
+       (r? ('実働 '+hm(r.work)+(r.night?'（深夜 '+hm(r.night)+'）':'')+(r.brk?' ／ 休憩 '+hm(r.brk):'')) : '打刻なし')+
+       '</div></div>'+badge+'</div>';
+  });
+  h+='</div>';
+  if(any) h+='<div class="count-note">この日の実働 合計 <b style="color:var(--espresso)">'+hm(tw)+'</b></div>';
+  h+='<div class="count-note">名前をタップすると打刻時刻を追加・修正できます。</div>';
+  return h;
+}
+function timeReqHtml(){
+  const list=(store.tcReq||[]).slice().sort((a,b)=>b.t-a.t);
+  const open=list.filter(r=>!r.done), done=list.filter(r=>r.done).slice(0,20);
+  let h='<div class="sec-title">⚠️ 打刻の修正依頼</div>';
+  if(!open.length) h+='<div class="empty-state"><div class="ic">✅</div>未対応の依頼はありません</div>';
+  open.forEach(r=>{ h+=tcReqCard(r,false); });
+  if(done.length){ h+='<div class="sec-title" style="margin-top:26px">✅ 対応済み（最近20件）</div>'; done.forEach(r=>{ h+=tcReqCard(r,true); }); }
+  return h;
+}
+function tcReqCard(r,isDone){
+  const s=staffById(r.sid);
+  return '<div class="card" style="padding:14px;margin-bottom:10px'+(isDone?';opacity:.55':'')+'">'+
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">'+
+    '<b style="color:var(--espresso);font-size:15px">'+esc(s?s.name:"(削除済み)")+'</b>'+
+    '<span class="pill amber">'+mdw(r.d)+' の打刻</span>'+
+    '<span style="margin-left:auto;font-size:11px;color:var(--muted)">'+nowStr(r.t)+'</span></div>'+
+    '<div style="font-size:13.5px;white-space:pre-wrap;line-height:1.65">'+esc(r.msg)+'</div>'+
+    (isDone?'':'<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">'+
+      '<button class="btn btn-primary btn-sm" onclick="tcEditDay(\''+r.d+'\',\''+r.sid+'\')">🛠 打刻を直す</button>'+
+      '<button class="btn btn-ghost btn-sm" onclick="tcReqDone(\''+r.id+'\')">対応済みにする</button></div>')+
+    '</div>';
+}
+function tcReqDone(id){ (store.tcReq||[]).forEach(r=>{ if(r.id===id) r.done=true; }); persist(); renderTime(); toast("対応済みにしました"); }
+
+/* ---------- 管理者: 打刻の修正 ---------- */
+function addDays(ds,n){ const d=new Date(ds); d.setDate(d.getDate()+n); return ymd(d); }
+function tcEditDay(bd,sid){
+  const s=staffById(sid); if(!s) return;
+  openModal('<h3>🛠 打刻の修正</h3><p class="msub">'+esc(s.name)+' さん</p>'+
+    '<div class="monthnav" style="margin-bottom:14px">'+
+      '<button onclick="tcEditDay(\''+addDays(bd,-1)+'\',\''+sid+'\')">‹</button>'+
+      '<span class="mlabel" style="font-size:16px">'+mdw(bd)+' の営業日</span>'+
+      '<button onclick="tcEditDay(\''+addDays(bd,1)+'\',\''+sid+'\')">›</button>'+
+    '</div>'+
+    '<div id="tcEditList">'+tcEditRows(bd,sid)+'</div>'+
+    '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">'+
+    '<button class="btn btn-ghost btn-sm" onclick="tcAddPunch(\''+bd+'\',\''+sid+'\')">＋ 打刻を追加</button></div>'+
+    '<button class="btn btn-primary" style="margin-top:16px" onclick="closeModal()">閉じる</button>'+
+    '<p class="hint">直したそばから保存されます。翌朝'+payCfg().dayStart+'時までの打刻は'+mdw(bd)+'の勤務として集計します。</p>');
+}
+function tcEditRows(bd,sid){
+  const p=tcPunches(bd,sid);
+  if(!p.length) return '<div class="empty-state" style="padding:22px"><div class="ic">🕗</div>この日の打刻はありません</div>';
+  let h='<div class="tc-edit">';
+  p.forEach(function(e){
+    const t=new Date(e.t);
+    const tv=String(t.getHours()).padStart(2,"0")+":"+String(t.getMinutes()).padStart(2,"0");
+    h+='<div class="ter">'+
+       '<select onchange="tcEditKind(\''+bd+'\',\''+sid+'\','+e.t+',this.value)">'+
+       ["in","bs","be","out"].map(k=>'<option value="'+k+'"'+(k===e.k?' selected':'')+'>'+TCK[k].ic+' '+TCK[k].l+'</option>').join('')+
+       '</select>'+
+       '<input type="date" value="'+ymd(t)+'" onchange="tcEditTime(\''+bd+'\',\''+sid+'\','+e.t+',this.value,\'\')">'+
+       '<input type="time" value="'+tv+'" onchange="tcEditTime(\''+bd+'\',\''+sid+'\','+e.t+',\'\',this.value)">'+
+       '<button class="del" onclick="tcDelPunch(\''+bd+'\',\''+sid+'\','+e.t+')">🗑</button></div>';
+  });
+  h+='</div>';
+  const r=tcDay(bd,sid,false);
+  if(r) h+='<div class="kv" style="margin-top:10px"><span class="k">この日の実働</span><span class="v" style="font-weight:700;font-size:15px;color:var(--espresso)">'+hm(r.work)+(r.night?'（深夜 '+hm(r.night)+'）':'')+(r.brk?' ／ 休憩 '+hm(r.brk):'')+'</span></div>';
+  if(r&&r.open) h+='<p class="hint" style="color:var(--rose)">⚠️ 退勤の打刻がありません。「＋ 打刻を追加」で退勤を足してください。</p>';
+  return h;
+}
+function _tcFind(bd,sid,t){ const r=tcRec(bd,sid); if(!r||!r.p) return null; for(let i=0;i<r.p.length;i++) if(r.p[i].t===t) return r.p[i]; return null; }
+function _tcRefresh(bd,sid){
+  const el=document.getElementById("tcEditList"); if(el) el.innerHTML=tcEditRows(bd,sid);
+  if(document.getElementById("admin").classList.contains("active")) renderTime();
+}
+function tcEditKind(bd,sid,t,k){ const e=_tcFind(bd,sid,t); if(!e) return; e.k=k; e.by="admin"; persist(); _tcRefresh(bd,sid); }
+function tcEditTime(bd,sid,t,dstr,tstr){
+  const rec=tcRec(bd,sid), e=_tcFind(bd,sid,t); if(!e||!rec) return;
+  const d=new Date(e.t);
+  if(dstr){ const a=dstr.split("-"); d.setFullYear(+a[0], +a[1]-1, +a[2]); }
+  if(tstr){ const b=tstr.split(":"); d.setHours(+b[0], +b[1], 0, 0); }
+  let nt=d.getTime();
+  while(rec.p.some(x=>x!==e && x.t===nt)) nt+=1;
+  e.t=nt; e.by="admin";
+  rec.p.sort((a,b)=>a.t-b.t); persist(); _tcRefresh(bd,sid);
+}
+function tcDelPunch(bd,sid,t){
+  const rec=tcRec(bd,sid); if(!rec) return;
+  rec.p=rec.p.filter(e=>e.t!==t);
+  if(!rec.p.length){ delete store.tc[bd][sid]; if(!Object.keys(store.tc[bd]).length) delete store.tc[bd]; }
+  persist(); _tcRefresh(bd,sid);
+}
+function tcAddPunch(bd,sid){
+  const rec=tcBucket(bd,sid);
+  const p=tcPunches(bd,sid);
+  const d=new Date(bd);
+  /* 直前の打刻の1時間後、無ければ18:00を初期値に */
+  let t;
+  if(p.length){ t=p[p.length-1].t+3600000; }
+  else { d.setHours(18,0,0,0); t=d.getTime(); }
+  const nextKind = !p.length ? "in" : ({in:"out", be:"out", bs:"be", out:"in"}[p[p.length-1].k]||"out");
+  rec.p.push({t:tcUniqT(rec,t), k:nextKind, by:"admin"});
+  rec.p.sort((a,b)=>a.t-b.t); persist(); _tcRefresh(bd,sid);
+}
+
+/* ---------- 管理者: 給与集計 ---------- */
+function setAgg(o){ aggCustom=null; aggOffset=o; renderTime(); }
+function setAggCustom(){ const p=payPeriod(aggOffset); aggCustom={s:p.s,e:p.e}; renderTime(); }
+function applyAggRange(){
+  const a=document.getElementById("aggS"), b=document.getElementById("aggE");
+  if(a&&b&&a.value&&b.value){ aggCustom={s:a.value, e:b.value}; renderTime(); }
+}
+function timeAggHtml(){
+  const per=aggCustom||payPeriod(aggOffset), rows=tcAggregate(per.s,per.e), cd=payCfg().closeDay;
+  let h='<div class="card" style="padding:14px">'+
+    '<div class="seg" style="margin-bottom:12px">'+
+    '<button class="'+(!aggCustom&&aggOffset===0?"on":"")+'" onclick="setAgg(0)">今期</button>'+
+    '<button class="'+(!aggCustom&&aggOffset===-1?"on":"")+'" onclick="setAgg(-1)">前期</button>'+
+    '<button class="'+(aggCustom?"on":"")+'" onclick="setAggCustom()">期間指定</button></div>'+
+    '<div class="agg-range"><input type="date" id="aggS" value="'+per.s+'" onchange="applyAggRange()"><span>〜</span>'+
+    '<input type="date" id="aggE" value="'+per.e+'" onchange="applyAggRange()"></div>'+
+    '<p class="hint" style="margin-top:8px">締め日: '+(cd>=31?"末日":cd+"日")+' ／ 端数: '+
+    ({1:"1分単位",5:"5分単位",15:"15分単位"}[payCfg().round]||"1分単位")+' ／ 深夜: '+payCfg().nightFrom+'時〜'+payCfg().nightTo+'時（⚙️設定で変更）</p></div>';
+
+  const used=rows.filter(r=>r.days>0);
+  if(!used.length) return h+'<div class="empty-state"><div class="ic">🕗</div>この期間の打刻データはありません</div>';
+
+  let tw=0,tn=0,tp=0,noWage=0,openN=0;
+  let t='<div class="tbl-wrap"><table class="tbl"><thead><tr><th class="nm">名前</th><th>日数</th><th>実働</th><th>うち深夜</th><th>時給</th><th>深夜時給</th><th>支給額</th></tr></thead><tbody>';
+  used.forEach(function(r){
+    tw+=r.work; tn+=r.night; tp+=r.pay; if(!r.wage) noWage++; openN+=r.open;
+    t+='<tr><td class="nm">'+esc(r.s.name)+(r.open?' <span class="pill amber">未退勤'+(r.open>1?r.open:'')+'</span>':'')+'</td>'+
+       '<td>'+r.days+'</td><td>'+hm(r.work)+'</td><td>'+hm(r.night)+'</td>'+
+       '<td>'+(r.wage?yen(r.wage):'—')+'</td><td>'+(r.wage?yen(r.wageN):'—')+'</td>'+
+       '<td><b>'+(r.wage?yen(r.pay):'—')+'</b></td></tr>';
+  });
+  t+='</tbody><tfoot><tr><td class="nm">合計</td><td></td><td>'+hm(tw)+'</td><td>'+hm(tn)+'</td><td></td><td></td><td>'+yen(tp)+'</td></tr></tfoot></table></div>';
+  h+=t;
+  if(noWage) h+='<p class="hint" style="color:var(--rose);margin-top:10px">⚠️ 時給が未設定の方が'+noWage+'名います。⚙️設定 → スタッフ管理 で時給を入力してください。</p>';
+  if(openN) h+='<p class="hint" style="color:var(--rose)">⚠️ 退勤の打刻がない日があります。「今日の勤怠」から日付を選んで修正してください。</p>';
+  h+='<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="aggCopy()">📋 集計をコピー</button></div>';
+  return h;
+}
+function aggCopy(){
+  const per=aggCustom||payPeriod(aggOffset), rows=tcAggregate(per.s,per.e);
+  const L=["【笑っと 給与集計】"+per.s+" 〜 "+per.e,""];
+  let tot=0;
+  rows.forEach(function(r){
+    if(!r.days) return; tot+=r.pay;
+    L.push(r.s.name+"  "+r.days+"日  実働"+hm(r.work)+"（深夜"+hm(r.night)+"）  "+(r.wage?yen(r.pay):"※時給未設定"));
+  });
+  L.push("", "合計 "+yen(tot));
+  const txt=L.join("\n");
+  const fallback=function(){ openModal('<h3>給与集計</h3><p class="msub">長押しでコピーしてください</p><div class="field"><textarea rows="10" readonly>'+esc(txt)+'</textarea></div><button class="btn btn-primary" onclick="closeModal()">閉じる</button>'); };
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(()=>toast("コピーしました"), fallback); }
+  else fallback();
+}
+
+/* ---------- 給与設定の保存 ---------- */
+function savePayCfg(){
+  const g=function(id,d){ const e=document.getElementById(id); const v=e?Number(e.value):NaN; return isFinite(v)?v:d; };
+  store.settings.pay={
+    closeDay:g("setCloseDay",31), dayStart:g("setDayStart",5),
+    nightFrom:g("setNightFrom",22), nightTo:g("setNightTo",5),
+    nightRate:Math.max(1, Math.min(3, g("setNightRate",1.25))),
+    round:g("setRound",1)
+  };
+  persist(); syncSettingsForm(); renderStaffManage();
+  if(soundOn&&Snd.good) Snd.good(); toast("給与設定を保存しました");
+}
+
 /* ===================== MODAL ===================== */
 const modalBox=document.getElementById("modalBox");
 function openModal(html){ modalBox.innerHTML='<div class="grip"></div>'+html; document.getElementById("modalBg").classList.add("show"); }
@@ -1313,7 +1894,7 @@ function closeModal(){ document.getElementById("modalBg").classList.remove("show
 function adminTab(t){
   adminView=t;
   if(t==="shift") _scrollShiftToday=true;
-  ["shift","closed","set"].forEach(x=>{
+  ["shift","time","closed","set"].forEach(x=>{
     document.getElementById("tab"+x.charAt(0).toUpperCase()+x.slice(1)).classList.toggle("on",x===t);
     document.getElementById("sv"+x.charAt(0).toUpperCase()+x.slice(1)).classList.toggle("active",x===t);
   });
@@ -1396,12 +1977,15 @@ function renderAll(){
   if(document.getElementById("admin").classList.contains("active")){
     document.getElementById("adminMonthLabel").textContent = adminCursor.getFullYear()+"年 "+(adminCursor.getMonth()+1)+"月";
     if(adminView==="shift") renderShift();
+    else if(adminView==="time") renderTime();
     else if(adminView==="closed") renderClosures();
     else if(adminView==="set") renderStaffManage();
     updateSyncUI();
     if(typeof updateLandscape==="function") updateLandscape();
   }
   if(document.getElementById("emp").classList.contains("active") && currentEmpId){ if(empViewMode==="sched") renderEmpSched(); else renderEmpCal(); }
+  if(document.getElementById("tc").classList.contains("active")) renderTc();
+  renderTimeBadge();
 }
 function monthDates(cur){
   const y=cur.getFullYear(), m=cur.getMonth(), days=new Date(y,m+1,0).getDate(); const arr=[];
@@ -1803,7 +2387,7 @@ function renderStaffManage(){
   store.staff.forEach(s=>{
     h+='<div class="row-wrap">'+
       '<div class="row-actions"><button class="act-edit" onclick="renameStaff(\''+s.id+'\')">編集</button><button class="act-del" onclick="deleteStaff(\''+s.id+'\')">削除</button></div>'+
-      '<div class="row mrow" data-sid="'+s.id+'"><div class="av">'+esc(initials(s.name))+'</div><div class="meta"><div class="nm">'+esc(s.name)+'</div></div></div>'+
+      '<div class="row mrow" data-sid="'+s.id+'" onclick="renameStaff(\''+s.id+'\')"><div class="av">'+esc(initials(s.name))+'</div><div class="meta"><div class="nm">'+esc(s.name)+'</div><div class="desc">'+wageLabel(s)+'</div></div><span class="wage-tag">✏️</span></div>'+
       '</div>';
   });
   el.innerHTML=h;
@@ -1824,14 +2408,29 @@ function confirmAddStaff(){
   const n=document.getElementById("mAdd").value.trim(); if(!n)return;
   store.staff.push({id:uid(),name:n}); persist(); closeModal(); renderStaffManage(); toast("追加しました");
 }
+function wageLabel(s){
+  const w=wageOf(s);
+  if(!w) return '<span style="color:var(--rose)">時給 未設定</span>';
+  return '時給 '+yen(w)+' ／ 深夜 '+yen(wageNOf(s))+(s.wageN?'':'（自動）');
+}
 function renameStaff(id){
   const s=staffById(id); if(!s)return;
-  openModal('<h3>名前を編集</h3><div class="field"><input type="text" id="mRen" maxlength="12" value="'+esc(s.name)+'"></div><button class="btn btn-primary" onclick="confirmRename(\''+id+'\')">保存</button>');
+  openModal('<h3>スタッフの設定</h3><p class="msub">名前と時給を編集します</p>'+
+    '<div class="field"><label>名前</label><input type="text" id="mRen" maxlength="12" value="'+esc(s.name)+'"></div>'+
+    '<div class="field"><label>時給（円）</label><input type="number" id="mWage" inputmode="numeric" min="0" step="10" placeholder="例: 1200" value="'+(s.wage||"")+'"></div>'+
+    '<div class="field"><label>深夜時給（円）※空欄なら自動計算</label><input type="number" id="mWageN" inputmode="numeric" min="0" step="10" placeholder="自動: '+wageNOf(s)+'" value="'+(s.wageN||"")+'">'+
+    '<p class="hint" style="margin-top:6px">空欄にすると「時給 × '+payCfg().nightRate+'倍」で自動計算します（⚙️設定で倍率変更可）。</p></div>'+
+    '<button class="btn btn-primary" onclick="confirmRename(\''+id+'\')">保存</button>');
   setTimeout(()=>{const i=document.getElementById("mRen");i.focus();i.select();},100);
 }
 function confirmRename(id){
   const n=document.getElementById("mRen").value.trim(); if(!n)return;
-  const s=staffById(id); s.name=n; persist(); closeModal(); renderStaffManage(); toast("更新しました");
+  const s=staffById(id); s.name=n;
+  const w=parseInt(document.getElementById("mWage").value,10);
+  const wn=parseInt(document.getElementById("mWageN").value,10);
+  s.wage = (isFinite(w)&&w>0)? w : 0;
+  s.wageN = (isFinite(wn)&&wn>0)? wn : 0;
+  persist(); closeModal(); renderStaffManage(); toast("更新しました");
 }
 function deleteStaff(id){
   const s=staffById(id); if(!s)return;
@@ -1850,6 +2449,11 @@ function syncSettingsForm(){
   document.getElementById("setAdminPw").value=store.settings.adminPw;
   document.getElementById("setNotice").value=store.notice||"";
   document.getElementById("setRoomId").value=localStorage.getItem(ROOM_KEY)||"";
+  const pc=payCfg(), sv=function(id,v){ const e=document.getElementById(id); if(e) e.value=v; };
+  sv("setCloseDay",pc.closeDay); sv("setDayStart",pc.dayStart);
+  sv("setNightFrom",pc.nightFrom); sv("setNightTo",pc.nightTo);
+  sv("setNightRate",pc.nightRate); sv("setRound",pc.round);
+  const qu=document.getElementById("tcQrUrl"); if(qu) qu.textContent=tcUrl();
 }
 function savePasswords(){
   const e=document.getElementById("setEmpPw").value.trim();
@@ -1967,8 +2571,15 @@ window.addEventListener("orientationchange", function(){ setTimeout(function(){ 
 refreshSndBtn();
 initCloud();
 setRole("emp");
+// 起動時の入口: 厨房のQR(?tc=1 / #tc)ならパスワード無しで打刻画面へ
+(function entry(){
+  let q=""; try{ q=new URLSearchParams(location.search).get("tc")||""; }catch(e){}
+  if(q==="1" || location.hash==="#tc"){ openTimecard(null, true); return true; }
+  return false;
+})();
 // ログイン状態の復元（チェックを外す/ログアウトするまで保持）
 (function autoLogin(){
+  if(document.getElementById("tc").classList.contains("active")) return;   // QRで打刻画面に入った時は何もしない
   const pref = localStorage.getItem(PREF_KEY)==="1";
   document.getElementById("rememberChk").checked = pref;
   if(!pref) return;
