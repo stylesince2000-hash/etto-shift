@@ -621,6 +621,13 @@ input.pin::placeholder{letter-spacing:10px}
         <div id="staffManage" class="list"></div>
         <button class="btn btn-ghost btn-sm" style="margin-top:12px" onclick="addStaffPrompt()">＋ スタッフを追加</button>
 
+        <div class="sec-title" style="margin-top:26px">🏮 お店の基本</div>
+        <div class="card" style="padding:16px">
+          <div class="field" style="margin:0"><label>開店時刻</label>
+            <input type="time" id="setOpenTime" onchange="saveOpenTime()">
+            <p class="hint" style="margin-top:8px">予約や打刻を入力するときの<b>初期値</b>に使います。<br>閉店時刻は決まっていないので設定不要です（日付の区切りは下の「営業日の切り替わり時刻」で扱います）。</p></div>
+        </div>
+
         <div class="sec-title" style="margin-top:26px">💰 給与・勤怠の設定</div>
         <div class="card" style="padding:16px">
           <div class="field"><label>給与の締め日</label>
@@ -751,7 +758,7 @@ const LS_KEY = "ettoShift_v1";
 const ROOM_KEY = "ettoShift_room";
 const PREF_KEY = "ettoShift_remember";  // "1"/"0" : ログイン保持の希望
 const SESS_KEY = "ettoShift_session";   // {role, empId} : 自動ログイン用
-const APP_VERSION = "2026.09.06-6";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
+const APP_VERSION = "2026.09.06-7";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
 let soundOn = localStorage.getItem("ettoShift_sound")!=="0";  // 操作音 ON/OFF（この端末ごと・既定ON）
 /* 管理者ログイン通知（開発者だけ受信）。GASをデプロイしたら /exec URL をここに貼る。空なら何もしない */
 const LOGIN_NOTIFY_URL = "";   // ★笑っとはメール通知なし（通知は亜子だけ）。使いたくなったらGASの /exec URL を貼る
@@ -818,6 +825,7 @@ function migrate(s){
   if(!Array.isArray(s.tcReq)) s.tcReq = [];
   s.settings.pay = Object.assign({}, PAY_DEF, s.settings.pay || {});
   s.settings.geo = Object.assign({on:false, radius:150, block:false}, s.settings.geo || {});
+  if(!/^\d{2}:\d{2}$/.test(s.settings.open||"")) s.settings.open = OPEN_DEF;
   return s;
 }
 
@@ -1569,6 +1577,8 @@ function clearMark(ds){
    厨房のQR → ?tc=1 で打刻画面。状態に応じて押せるボタンだけを出す。
    営業日は「切り替わり時刻（既定 朝5時）」で区切るので、深夜営業の日またぎも1日分になる。
    ===================================================================== */
+const OPEN_DEF = "17:30";   // 開店時刻（設定で変更可）。予約・打刻の入力欄の初期値に使う
+function openTime(){ const v=(store&&store.settings&&store.settings.open)||""; return /^\d{2}:\d{2}$/.test(v)?v:OPEN_DEF; }
 const PAY_DEF = { closeDay:31, dayStart:5, nightFrom:22, nightTo:5, nightRate:1.25, round:1 };
 function payCfg(){
   const p=(store && store.settings && store.settings.pay) || {};
@@ -1907,6 +1917,14 @@ async function registerStoreLocation(){
   if(soundOn&&Snd.good) Snd.good();
   toast("店の位置を登録しました");
 }
+function saveOpenTime(){
+  const e=document.getElementById("setOpenTime"); if(!e) return;
+  const v=e.value;
+  if(!/^\d{2}:\d{2}$/.test(v)){ e.value=openTime(); return; }
+  store.settings.open=v; persist();
+  if(soundOn&&Snd.good) Snd.good();
+  toast("開店時刻を "+v+" にしました");
+}
 function saveGeoCfg(){
   const on=document.getElementById("setGeoOn"), bl=document.getElementById("setGeoBlock"), rd=document.getElementById("setGeoRadius");
   store.settings.geo=Object.assign({}, store.settings.geo||{}, {
@@ -2069,7 +2087,7 @@ function tcAddPunch(bd,sid){
   /* 直前の打刻の1時間後、無ければ18:00を初期値に */
   let t;
   if(p.length){ t=p[p.length-1].t+3600000; }
-  else { d.setHours(18,0,0,0); t=d.getTime(); }
+  else { const op=openTime().split(":"); d.setHours(+op[0], +op[1], 0, 0); t=d.getTime(); }
   const nextKind = !p.length ? "in" : ({in:"out", be:"out", bs:"be", out:"in"}[p[p.length-1].k]||"out");
   rec.p.push({t:tcUniqT(rec,t), k:nextKind, by:"admin"});
   rec.p.sort((a,b)=>a.t-b.t); persist(); _tcRefresh(bd,sid);
@@ -2380,9 +2398,10 @@ function rsvEdit(id){
   const r = id ? rsvById(ds,id) : null;
   let h='<h3>'+(r?'📖 予約を編集':'📖 予約を追加')+'</h3><p class="msub">'+mdw(ds)+'</p>';
   h+='<div style="display:flex;gap:10px">'+
-     '<div class="field" style="flex:0 0 118px"><label>時間</label><input type="time" id="rvT" value="'+esc(r?(r.t||""):"18:00")+'"></div>'+
+     '<div class="field" style="flex:0 0 118px"><label>時間</label><input type="time" id="rvT" value="'+esc(r?(r.t||openTime()):openTime())+'" onchange="rsvTimeNote()"></div>'+
      '<div class="field" style="flex:1"><label>人数</label><input type="number" id="rvN" inputmode="numeric" min="1" max="60" value="'+(r&&r.n?r.n:"")+'" placeholder="4"></div>'+
      '</div>';
+  h+='<div id="rvTimeNote"></div>';
   h+='<div class="field"><label>お名前</label><input type="text" id="rvName" maxlength="24" value="'+esc(r?(r.name||""):"")+'" placeholder="例: 田中"></div>';
   h+='<div class="field"><label>電話番号（任意）</label><input type="tel" id="rvTel" inputmode="tel" value="'+esc(r?(r.tel||""):"")+'" placeholder="090-0000-0000"></div>';
   h+='<div class="field"><label>備考（任意）</label><textarea id="rvMemo" rows="2" placeholder="例: コース／お子様2名／アレルギー えび">'+esc(r?(r.memo||""):"")+'</textarea></div>';
@@ -2398,7 +2417,16 @@ function rsvEdit(id){
   h+='<button class="btn btn-primary" style="margin-top:14px" onclick="rsvSaveForm(\''+(r?r.id:"")+'\')">保存する</button>';
   if(r) h+='<button class="btn btn-danger btn-sm" style="margin-top:12px" onclick="rsvAskDelete(\''+r.id+'\')">この予約を削除</button>';
   openModal(h);
+  rsvTimeNote();
   setTimeout(()=>{ const i=document.getElementById("rvName"); if(i&&!r) i.focus(); },120);
+}
+/* 開店前の時刻だと押し間違い（07:30と17:30など）の可能性があるので、そっと知らせる */
+function rsvTimeNote(){
+  const w=document.getElementById("rvTimeNote"); if(!w) return;
+  const v=(document.getElementById("rvT")||{}).value||"";
+  const op=openTime();
+  w.innerHTML = (/^\d{2}:\d{2}$/.test(v) && v<op)
+    ? '<div class="rsv-warn">⚠️ 開店（'+op+'）より前の時間です。入力ミスでなければこのままでOKです。</div>' : '';
 }
 function rsvSaveForm(id){
   const ds=rsvDate||rsvToday();
@@ -3010,6 +3038,7 @@ function syncSettingsForm(){
   const go=document.getElementById("setGeoOn"); if(go) go.checked=gc.on;
   const gb=document.getElementById("setGeoBlock"); if(gb) gb.checked=gc.block;
   const gr=document.getElementById("setGeoRadius"); if(gr) gr.value=gc.radius;
+  const ot=document.getElementById("setOpenTime"); if(ot) ot.value=openTime();
   renderGeoStatus();
 }
 function savePasswords(){
