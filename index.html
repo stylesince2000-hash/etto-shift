@@ -400,7 +400,14 @@ input.pin::placeholder{letter-spacing:10px}
 .tbl-box .tm{font-size:9.5px;font-weight:700;color:var(--rose);line-height:1.1}
 .tbl-box .nmz{font-size:9px;color:var(--ink);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.1}
 .tbl-box .more{font-size:8.5px;color:var(--muted)}
+.tbl-box{position:relative}
 .tbl-box.on{background:#fdf0e2;border-color:var(--latte);box-shadow:0 0 0 1.5px var(--latte) inset}
+/* 座敷1〜7を繋げた時の見せ方: 隣り合う枠をつないで1つの卓に見せる */
+.tbl-box.jl{border-top-left-radius:0;border-bottom-left-radius:0;border-left-color:transparent;box-shadow:none}
+.tbl-box.jr{border-top-right-radius:0;border-bottom-right-radius:0;border-right-color:transparent;box-shadow:none}
+.tbl-box.jr::after{content:"";position:absolute;right:-6.5px;top:-1.5px;bottom:-1.5px;width:8px;background:#fdf0e2;border-top:1.5px solid var(--latte);border-bottom:1.5px solid var(--latte);z-index:2}
+.tbl-box.on.done.jr::after{background:#e8f0ea;border-color:var(--green)}
+.tbl-box.jl .no,.tbl-box.jr .no{opacity:.75}
 .tbl-box.done{background:#e8f0ea;border-color:var(--green)}
 .tbl-box.done .tm{color:var(--green)}
 .tbl-box:active{transform:scale(.95)}
@@ -427,11 +434,6 @@ input.pin::placeholder{letter-spacing:10px}
 .rsv-chip.c{background:#e9eef6}
 .rsv-card .ck{flex:0 0 34px;height:34px;border-radius:11px;border:1.5px solid var(--line);background:var(--paper);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .rsv-card.done .ck{background:#e3efe7;border-color:var(--green)}
-.seat-pick{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-.seat-pick button{border:1.5px solid var(--line);background:var(--paper);border-radius:11px;padding:8px 0;font-size:13px;font-weight:700;color:var(--ink);cursor:pointer;font-family:inherit;flex:0 0 46px}
-.seat-pick button.sel{background:var(--coffee);border-color:var(--coffee);color:#fff}
-.seat-pick button.taken{border-style:dashed;color:var(--rose)}
-.seat-pick button.taken.sel{color:#fff;border-style:solid}
 .rsv-warn{background:#fdf0e2;border:1px solid #ecd7b3;border-radius:12px;padding:9px 12px;font-size:12.5px;color:var(--coffee);margin-top:10px;line-height:1.6}
 </style>
 </head>
@@ -746,7 +748,7 @@ const LS_KEY = "ettoShift_v1";
 const ROOM_KEY = "ettoShift_room";
 const PREF_KEY = "ettoShift_remember";  // "1"/"0" : ログイン保持の希望
 const SESS_KEY = "ettoShift_session";   // {role, empId} : 自動ログイン用
-const APP_VERSION = "2026.09.06-4";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
+const APP_VERSION = "2026.09.06-5";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
 let soundOn = localStorage.getItem("ettoShift_sound")!=="0";  // 操作音 ON/OFF（この端末ごと・既定ON）
 /* 管理者ログイン通知（開発者だけ受信）。GASをデプロイしたら /exec URL をここに貼る。空なら何もしない */
 const LOGIN_NOTIFY_URL = "";   // ★笑っとはメール通知なし（通知は亜子だけ）。使いたくなったらGASの /exec URL を貼る
@@ -2139,20 +2141,27 @@ function savePayCfg(){
 /* =====================================================================
    予約管理
    座敷は 1,2,3,5,6,7 が上段・8 が左下（4番の卓は無い）。カウンターは1〜6席。
+   ・1席につき予約は1組だけ（回転は扱わない）
+   ・予約は席を決めずに登録し、あとからフロア図で席を割り当てる
+   ・上段の座敷1〜7は繋げられるので、同じ組が続けて座ると1つの卓として描く
    従業員・管理者のどちらからでも追加/編集/削除できる（現場で触るものなので制限しない）。
    ===================================================================== */
-const ZASHIKI = [1,2,3,5,6,7];      // 上段の座敷（4番は無い）
-const ZASHIKI8 = 8;                 // 左下の座敷
+const ZASHIKI = [1,2,3,5,6,7];      // 上段の座敷（4番は無い・並び順のまま隣り合っている）
+const ZASHIKI8 = 8;                 // 左下の座敷（上段とは繋がらない）
 const COUNTER = [1,2,3,4,5,6];      // カウンター席
-const ALL_SEATS = ZASHIKI.map(n=>"z"+n).concat(["z"+ZASHIKI8]).concat(COUNTER.map(n=>"c"+n));
 function seatLabel(s){ return s[0]==="z" ? "座敷"+s.slice(1) : "カウンター"+s.slice(1); }
-function seatShort(s){ return s[0]==="z" ? "座"+s.slice(1) : "C"+s.slice(1); }
+/* 割り当てた順ではなく席番号順で見せる（座敷 → カウンター） */
+function seatSort(seats){
+  const rank=x=>(x[0]==="z"?0:100)+Number(x.slice(1));
+  return (seats||[]).slice().sort((a,b)=>rank(a)-rank(b));
+}
 
 function rsvAll(ds){
   const a=(store.rsv||{})[ds];
   return Array.isArray(a) ? a.slice().sort((x,y)=>(x.t||"").localeCompare(y.t||"")) : [];
 }
-function rsvOfSeat(ds,seat){ return rsvAll(ds).filter(r=>(r.seats||[]).indexOf(seat)>=0); }
+/* 1席1組なので、その席の予約は1件だけ返す */
+function rsvOfSeat(ds,seat){ return rsvAll(ds).find(r=>(r.seats||[]).indexOf(seat)>=0)||null; }
 function rsvById(ds,id){ return rsvAll(ds).find(r=>r.id===id)||null; }
 function rsvSave(ds,r){
   store.rsv=store.rsv||{}; store.rsv[ds]=store.rsv[ds]||[];
@@ -2171,9 +2180,29 @@ function rsvWho(){
   if(role==="admin") return "店長";
   const s=staffById(currentEmpId); return s?s.name:"スタッフ";
 }
+/* 席の割り当て・解除 */
+function rsvAssign(ds,seat,id){
+  if(rsvOfSeat(ds,seat)) return;            // すでに埋まっている席には入れない
+  const r=rsvById(ds,id); if(!r) return;
+  r.seats=(r.seats||[]).concat([seat]);
+  rsvSave(ds,r); closeModal(); renderRsv();
+  if(soundOn&&Snd.good) Snd.good();
+  toast(seatLabel(seat)+" に "+(r.name||"")+"様 を入れました");
+}
+function rsvUnassign(ds,seat){
+  const r=rsvOfSeat(ds,seat); if(!r) return;
+  r.seats=(r.seats||[]).filter(s=>s!==seat);
+  rsvSave(ds,r); closeModal(); renderRsv();
+  if(soundOn&&Snd.tap) Snd.tap();
+  toast(seatLabel(seat)+" を空けました");
+}
+function rsvClearSeats(ds,id){
+  const r=rsvById(ds,id); if(!r) return;
+  r.seats=[]; rsvSave(ds,r); closeModal(); renderRsv(); toast("席を外しました");
+}
 
 /* ---------- 画面 ---------- */
-let rsvDate="", rsvVw="map", _rsvFrom="emp", _rsvSeats=[], _rsvEditId=null;
+let rsvDate="", rsvVw="map", _rsvFrom="emp";
 function rsvToday(){ return ymd(new Date()); }
 function openRsv(){
   _rsvFrom = document.getElementById("admin").classList.contains("active") ? "admin" : "emp";
@@ -2203,33 +2232,46 @@ function renderRsv(){
   document.getElementById("rsvSegMap").classList.toggle("on", rsvVw==="map");
   document.getElementById("rsvSegList").classList.toggle("on", rsvVw==="list");
   const list=rsvAll(ds), heads=list.reduce((a,r)=>a+(Number(r.n)||0),0);
+  const un=list.filter(r=>!(r.seats||[]).length).length;
   const sum=document.getElementById("rsvSum");
   if(sum){
-    sum.innerHTML = list.length
-      ? '<span>'+list.length+'組</span><span>合計 '+heads+'名</span>'+(isClosed(ds)?'<span style="background:#f6e2e3;color:var(--rose)">'+closeLabelFull(ds)+'</span>':'')
-      : (isClosed(ds)?'<span style="background:#f6e2e3;color:var(--rose)">'+closeLabelFull(ds)+'</span>':'<span>予約なし</span>');
+    let h="";
+    if(list.length){
+      h+='<span>'+list.length+'組</span><span>合計 '+heads+'名</span>';
+      if(un) h+='<span style="background:#f6e2e3;color:var(--rose)">席未定 '+un+'組</span>';
+    }else h+='<span>予約なし</span>';
+    if(isClosed(ds)) h+='<span style="background:#f6e2e3;color:var(--rose)">'+closeLabelFull(ds)+'</span>';
+    sum.innerHTML=h;
   }
   const el=document.getElementById("rsvArea"); if(!el) return;
   el.innerHTML = rsvVw==="map" ? floorHtml(ds) : rsvListHtml(ds);
 }
 
 /* ---------- フロア図（手描きの配置に合わせている） ---------- */
-function seatCell(ds, seat, cls){
-  const rs=rsvOfSeat(ds,seat), no=seat.slice(1);
-  const allDone = rs.length>0 && rs.every(r=>r.ok);
+/* 上段の座敷は隣どうしを繋げられるので、同じ組が続く場合は枠を繋いで1卓に見せる */
+function seatCell(ds, seat, cls, join){
+  const r=rsvOfSeat(ds,seat), no=seat.slice(1);
+  const j=join||{};
+  let c=cls;
+  if(r) c+=r.ok? " on done" : " on";
+  if(j.jl) c+=" jl";
+  if(j.jr) c+=" jr";
   let inner='<span class="no">'+no+'</span>';
-  if(rs.length){
-    const r=rs[0];
+  if(r && !j.jl){                       // 繋がった卓は先頭にだけ名前を出す
     inner+='<span class="tm">'+esc(r.t||"")+'</span>';
     inner+='<span class="nmz">'+esc(r.name||"")+(r.n?(" "+r.n):"")+'</span>';
-    if(rs.length>1) inner+='<span class="more">他'+(rs.length-1)+'件</span>';
   }
-  return '<button class="'+cls+(rs.length?(allDone?' on done':' on'):'')+'" onclick="rsvSeatTap(\''+seat+'\')">'+inner+'</button>';
+  return '<button class="'+c+'" onclick="rsvSeatTap(\''+seat+'\')">'+inner+'</button>';
+}
+function topJoins(ds){
+  const ids=ZASHIKI.map(n=>{ const r=rsvOfSeat(ds,"z"+n); return r?r.id:null; });
+  return ids.map((id,i)=>({ jl: !!(id && i>0 && ids[i-1]===id), jr: !!(id && i<ids.length-1 && ids[i+1]===id) }));
 }
 function floorHtml(ds){
+  const jn=topJoins(ds);
   let h='<div class="floor">';
   h+='<div class="fl-zone">座敷</div><div class="fl-top">';
-  ZASHIKI.forEach(n=>{ h+=seatCell(ds,"z"+n,"tbl-box"); });
+  ZASHIKI.forEach((n,i)=>{ h+=seatCell(ds,"z"+n,"tbl-box",jn[i]); });
   h+='</div>';
   h+='<div class="fl-bottom"><div class="z8">'+seatCell(ds,"z"+ZASHIKI8,"tbl-box z8")+'</div>'+
      '<div class="fl-cwrap"><div class="fl-zone" style="text-align:center;margin-bottom:5px">カウンター</div><div class="fl-seats">';
@@ -2237,23 +2279,66 @@ function floorHtml(ds){
   h+='</div><div class="fl-kitchen">キッチン</div></div></div>';
   h+='<div class="fl-entry">↑ 入口</div>';
   h+='</div>';
+
   const un=rsvAll(ds).filter(r=>!(r.seats||[]).length);
   if(un.length){
-    h+='<div class="sec-title" style="margin-top:20px">❓ 席が未定の予約</div>';
+    h+='<div class="sec-title" style="margin-top:20px">🪑 席が決まっていない予約 <span style="margin-left:auto;color:var(--rose);font-weight:700">'+un.length+'組</span></div>';
     un.forEach(r=>{ h+=rsvCardHtml(ds,r); });
+    h+='<div class="count-note">空いている席をタップして、この予約を入れてください。</div>';
+  }else{
+    h+='<div class="count-note" style="margin-top:12px">席をタップすると予約の割り当て・確認ができます。<br>座敷1〜7は隣どうしを繋げられます（同じ組を続けて入れると1卓として表示）。</div>';
   }
-  h+='<div class="count-note" style="margin-top:12px">席をタップすると予約の確認・追加ができます。</div>';
   return h;
 }
+
+/* 席をタップしたとき */
 function rsvSeatTap(seat){
-  const ds=rsvDate||rsvToday(), rs=rsvOfSeat(ds,seat);
+  const ds=rsvDate||rsvToday(), r=rsvOfSeat(ds,seat);
   if(soundOn&&Snd.tap) Snd.tap();
-  if(!rs.length){ rsvEdit(null, seat); return; }
-  let h='<h3>'+seatLabel(seat)+'</h3><p class="msub">'+mdw(ds)+' の予約</p>';
-  rs.forEach(r=>{ h+=rsvCardHtml(ds,r,true); });
-  h+='<div style="display:flex;gap:10px;margin-top:14px"><button class="btn btn-ghost" onclick="closeModal()">閉じる</button>'+
-     '<button class="btn btn-primary" onclick="closeModal();rsvEdit(null,\''+seat+'\')">＋ この席に追加</button></div>';
+  if(r) openSeatDetail(ds,seat,r); else openSeatAssign(ds,seat);
+}
+function openSeatDetail(ds,seat,r){
+  const others=seatSort(r.seats).filter(s=>s!==seat);
+  let h='<h3>'+seatLabel(seat)+'</h3><p class="msub">'+mdw(ds)+'</p>';
+  h+=rsvCardHtml(ds,r,true);
+  if(others.length) h+='<p class="hint" style="margin-top:-2px">この組は '+others.map(seatLabel).join('・')+' も使っています。</p>';
+  h+='<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">'+
+     '<button class="btn btn-ghost btn-sm" onclick="rsvToggleOk(\''+ds+'\',\''+r.id+'\')">'+(r.ok?'⬜ 来店を取り消す':'✅ 来店した')+'</button>'+
+     '<button class="btn btn-ghost btn-sm" onclick="closeModal();rsvEdit(\''+r.id+'\')">✏️ 予約を編集</button>'+
+     '<button class="btn btn-ghost btn-sm" onclick="rsvUnassign(\''+ds+'\',\''+seat+'\')">🪑 この席を空ける</button>'+
+     '</div>'+
+     '<button class="btn btn-primary" style="margin-top:14px" onclick="closeModal()">閉じる</button>';
   openModal(h);
+}
+function openSeatAssign(ds,seat){
+  const list=rsvAll(ds);
+  const un=list.filter(r=>!(r.seats||[]).length);
+  const seated=list.filter(r=>(r.seats||[]).length);
+  let h='<h3>'+seatLabel(seat)+'</h3><p class="msub">空席です。ここに入れる予約を選んでください。</p>';
+  if(!list.length){
+    h+='<div class="empty-state" style="padding:24px"><div class="ic">📖</div>この日の予約がまだありません</div>';
+  }else{
+    if(un.length){
+      h+='<div class="sec-title" style="margin-top:4px">席が決まっていない予約</div>';
+      un.forEach(r=>{ h+=assignRow(ds,seat,r); });
+    }
+    if(seated.length){
+      h+='<div class="sec-title" style="margin-top:18px">席を足す（卓を繋げる）</div>';
+      seated.forEach(r=>{ h+=assignRow(ds,seat,r); });
+    }
+  }
+  h+='<div style="display:flex;gap:10px;margin-top:16px"><button class="btn btn-ghost" onclick="closeModal()">閉じる</button>'+
+     '<button class="btn btn-primary" onclick="closeModal();rsvEdit(null)">＋ 新しい予約</button></div>';
+  openModal(h);
+}
+function assignRow(ds,seat,r){
+  const cur=seatSort(r.seats).map(seatLabel).join('・');
+  return '<button class="chip" style="width:100%;justify-content:flex-start;margin-bottom:8px;padding:12px 14px" onclick="rsvAssign(\''+ds+'\',\''+seat+'\',\''+r.id+'\')">'+
+    '<b style="font-size:15px;color:var(--espresso);min-width:48px">'+esc(r.t||"--:--")+'</b>'+
+    '<span style="font-weight:700">'+esc(r.name||"（名前なし）")+' 様</span>'+
+    (r.n?'<span style="color:var(--coffee);font-weight:700">'+r.n+'名</span>':'')+
+    (cur?'<span style="margin-left:auto;font-size:11px;color:var(--muted)">'+esc(cur)+'</span>':'')+
+    '</button>';
 }
 
 /* ---------- リスト ---------- */
@@ -2265,7 +2350,7 @@ function rsvListHtml(ds){
   return h;
 }
 function rsvCardHtml(ds,r,inModal){
-  const seats=(r.seats||[]).map(s=>'<span class="rsv-chip'+(s[0]==="c"?' c':'')+'">'+seatLabel(s)+'</span>').join('');
+  const seats=seatSort(r.seats).map(s=>'<span class="rsv-chip'+(s[0]==="c"?' c':'')+'">'+seatLabel(s)+'</span>').join('');
   const sub=[];
   if(r.tel) sub.push('☎ '+esc(r.tel));
   if(r.memo) sub.push(esc(r.memo));
@@ -2273,7 +2358,7 @@ function rsvCardHtml(ds,r,inModal){
   return '<div class="rsv-card'+(r.ok?' done':'')+'"'+(inModal?'':' onclick="rsvEdit(\''+r.id+'\')"')+'>'+
     '<div class="tm">'+esc(r.t||"--:--")+'</div>'+
     '<div class="bd"><div class="nm">'+esc(r.name||"（名前なし）")+' 様'+(r.n?' <span style="font-weight:600;color:var(--coffee)">'+r.n+'名</span>':'')+'</div>'+
-    (seats?'<div class="seats">'+seats+'</div>':'<div class="seats"><span class="rsv-chip" style="background:#f6e2e3;color:var(--rose)">席 未定</span></div>')+
+    (seats?'<div class="seats">'+seats+'</div>':'<div class="seats"><span class="rsv-chip" style="background:#f6e2e3;color:var(--rose)">🪑 席 未定</span></div>')+
     (sub.length?'<div class="sub">'+sub.join('　')+'</div>':'')+
     '</div>'+
     '<button class="ck" onclick="event.stopPropagation();rsvToggleOk(\''+ds+'\',\''+r.id+'\')" title="来店したらタップ">'+(r.ok?'✅':'⬜')+'</button>'+
@@ -2286,68 +2371,31 @@ function rsvToggleOk(ds,id){
   closeModal(); renderRsv();
 }
 
-/* ---------- 追加・編集 ---------- */
-function rsvEdit(id, presetSeat){
+/* ---------- 追加・編集（席はここでは決めない） ---------- */
+function rsvEdit(id){
   const ds=rsvDate||rsvToday();
   const r = id ? rsvById(ds,id) : null;
-  _rsvSeats = r ? (r.seats||[]).slice() : (presetSeat?[presetSeat]:[]);
-  _rsvEditId = r ? r.id : null;
   let h='<h3>'+(r?'📖 予約を編集':'📖 予約を追加')+'</h3><p class="msub">'+mdw(ds)+'</p>';
   h+='<div style="display:flex;gap:10px">'+
-     '<div class="field" style="flex:0 0 118px"><label>時間</label><input type="time" id="rvT" value="'+esc(r?(r.t||""):"18:00")+'" onchange="checkSeatConflict()"></div>'+
+     '<div class="field" style="flex:0 0 118px"><label>時間</label><input type="time" id="rvT" value="'+esc(r?(r.t||""):"18:00")+'"></div>'+
      '<div class="field" style="flex:1"><label>人数</label><input type="number" id="rvN" inputmode="numeric" min="1" max="60" value="'+(r&&r.n?r.n:"")+'" placeholder="4"></div>'+
      '</div>';
   h+='<div class="field"><label>お名前</label><input type="text" id="rvName" maxlength="24" value="'+esc(r?(r.name||""):"")+'" placeholder="例: 田中"></div>';
-  h+='<div class="field"><label>席</label><div id="rvSeats"></div></div>';
   h+='<div class="field"><label>電話番号（任意）</label><input type="tel" id="rvTel" inputmode="tel" value="'+esc(r?(r.tel||""):"")+'" placeholder="090-0000-0000"></div>';
   h+='<div class="field"><label>備考（任意）</label><textarea id="rvMemo" rows="2" placeholder="例: コース／お子様2名／アレルギー えび">'+esc(r?(r.memo||""):"")+'</textarea></div>';
-  h+='<div id="rvWarn"></div>';
-  h+='<button class="btn btn-primary" style="margin-top:8px" onclick="rsvSaveForm(\''+(r?r.id:"")+'\')">保存する</button>';
+  /* 席は登録後にフロア図から割り当てる */
+  if(r && (r.seats||[]).length){
+    h+='<div class="field"><label>席</label><div class="seats" style="display:flex;gap:5px;flex-wrap:wrap">'+
+       seatSort(r.seats).map(s=>'<span class="rsv-chip'+(s[0]==="c"?' c':'')+'">'+seatLabel(s)+'</span>').join('')+'</div>'+
+       '<p class="hint" style="margin-top:8px">席の変更は<b>フロア図</b>から。席をタップして「この席を空ける」、空席をタップして「席を足す」ができます。</p>'+
+       '<button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="rsvClearSeats(\''+ds+'\',\''+r.id+'\')">🪑 席をすべて外す</button></div>';
+  }else{
+    h+='<div class="rsv-warn" style="background:var(--foam);border-color:var(--line);color:var(--coffee)">🪑 席は登録したあと、<b>フロア図で空席をタップ</b>して割り当てます。<br>座敷1〜7は繋げられるので、大人数は続けて何卓でも入れられます。</div>';
+  }
+  h+='<button class="btn btn-primary" style="margin-top:14px" onclick="rsvSaveForm(\''+(r?r.id:"")+'\')">保存する</button>';
   if(r) h+='<button class="btn btn-danger btn-sm" style="margin-top:12px" onclick="rsvAskDelete(\''+r.id+'\')">この予約を削除</button>';
   openModal(h);
-  renderSeatPick();
   setTimeout(()=>{ const i=document.getElementById("rvName"); if(i&&!r) i.focus(); },120);
-}
-function renderSeatPick(){
-  const box=document.getElementById("rvSeats"); if(!box) return;
-  const ds=rsvDate||rsvToday();
-  const mk=function(seat){
-    const taken=rsvOfSeat(ds,seat).length>0;
-    const sel=_rsvSeats.indexOf(seat)>=0;
-    return '<button class="'+(sel?"sel ":"")+(taken?"taken":"")+'" onclick="toggleSeat(\''+seat+'\')">'+seat.slice(1)+'</button>';
-  };
-  let h='<div style="font-size:11.5px;color:var(--muted);margin-top:4px">座敷</div><div class="seat-pick">';
-  ZASHIKI.forEach(n=>{ h+=mk("z"+n); });
-  h+=mk("z"+ZASHIKI8);
-  h+='</div><div style="font-size:11.5px;color:var(--muted);margin-top:10px">カウンター</div><div class="seat-pick">';
-  COUNTER.forEach(n=>{ h+=mk("c"+n); });
-  h+='</div><p class="hint" style="margin-top:8px">複数えらべます。点線は既に他の予約が入っている席です。決まっていなければ選ばなくてOK。</p>';
-  box.innerHTML=h;
-  checkSeatConflict();
-}
-function toggleSeat(seat){
-  const i=_rsvSeats.indexOf(seat);
-  if(i>=0) _rsvSeats.splice(i,1); else _rsvSeats.push(seat);
-  if(soundOn&&Snd.pick) Snd.pick();
-  renderSeatPick();
-}
-/* 同じ席に近い時間の予約があれば注意を出す（禁止はしない。回転させる運用もあるため） */
-function checkSeatConflict(){
-  const w=document.getElementById("rvWarn"); if(!w) return;
-  const ds=rsvDate||rsvToday();
-  const t=(document.getElementById("rvT")||{}).value||"";
-  const cur=(document.getElementById("rvName")||{}).value;
-  const mins=function(x){ const p=(x||"").split(":"); return p.length===2 ? (+p[0])*60+(+p[1]) : null; };
-  const m0=mins(t);
-  const hits=[];
-  _rsvSeats.forEach(function(seat){
-    rsvOfSeat(ds,seat).forEach(function(r){
-      if(_rsvEditId && r.id===_rsvEditId) return;
-      const m1=mins(r.t);
-      if(m0===null||m1===null||Math.abs(m1-m0)<120) hits.push(seatLabel(seat)+' に '+(r.t||"")+' '+(r.name||"")+'様');
-    });
-  });
-  w.innerHTML = hits.length ? '<div class="rsv-warn">⚠️ 席が重なっているかもしれません<br>'+hits.map(esc).join('<br>')+'<br><span style="opacity:.75">問題なければそのまま保存できます。</span></div>' : '';
 }
 function rsvSaveForm(id){
   const ds=rsvDate||rsvToday();
@@ -2361,16 +2409,18 @@ function rsvSaveForm(id){
     t: g("rvT") || "",
     name: name,
     n: (isFinite(n)&&n>0)? n : 0,
-    seats: _rsvSeats.slice(),
+    seats: old? (old.seats||[]) : [],
     tel: g("rvTel"),
     memo: g("rvMemo").slice(0,300),
     ok: old? !!old.ok : false,
     by: old? (old.by||rsvWho()) : rsvWho(),
     ct: old? (old.ct||Date.now()) : Date.now()
   };
-  rsvSave(ds,r); closeModal(); renderRsv();
+  rsvSave(ds,r); closeModal();
+  if(!id && rsvVw!=="map"){ rsvVw="map"; }   // 新規はフロア図に戻して席を割り当ててもらう
+  renderRsv();
   if(soundOn&&Snd.good) Snd.good();
-  toast(id?"予約を更新しました":"予約を追加しました");
+  toast(id?"予約を更新しました":"予約を追加しました。空席をタップして席を決めてください");
 }
 function rsvAskDelete(id){
   const ds=rsvDate||rsvToday(), r=rsvById(ds,id); if(!r) return;
