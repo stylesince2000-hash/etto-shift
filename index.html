@@ -835,7 +835,7 @@ const LS_KEY = "ettoShift_v1";
 const ROOM_KEY = "ettoShift_room";
 const PREF_KEY = "ettoShift_remember";  // "1"/"0" : ログイン保持の希望
 const SESS_KEY = "ettoShift_session";   // {role, empId} : 自動ログイン用
-const APP_VERSION = "2026.09.06-21";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
+const APP_VERSION = "2026.09.06-22";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
 let soundOn = localStorage.getItem("ettoShift_sound")!=="0";  // 操作音 ON/OFF（この端末ごと・既定ON）
 /* 管理者ログイン通知（開発者だけ受信）。GASをデプロイしたら /exec URL をここに貼る。空なら何もしない */
 const LOGIN_NOTIFY_URL = "";   // ★笑っとはメール通知なし（通知は亜子だけ）。使いたくなったらGASの /exec URL を貼る
@@ -1238,7 +1238,7 @@ function eventBox(ds,editable){
   const rl=(typeof rsvAll==="function")?rsvAll(ds):[];
   if(rl.length){
     const heads=rl.reduce((a,r)=>a+(Number(r.n)||0),0);
-    h+='<div class="event-box" style="border-left-color:var(--coffee);cursor:pointer" onclick="closeModal();rsvDate=\''+ds+'\';openRsv()">'+
+    h+='<div class="event-box" style="border-left-color:var(--coffee);cursor:pointer" onclick="closeModal();openRsvDay(\''+ds+'\')">'+
        '<span class="eh">📖 予約 '+rl.length+'組 / '+heads+'名</span>'+
        '<div class="et">'+rl.slice(0,4).map(r=>esc(rsvTimeText(r)+' '+(r.name||"")+'様'+(r.n?(" "+r.n+"名"):""))).join('<br>')+
        (rl.length>4?'<br>ほか'+(rl.length-4)+'組':'')+'</div></div>';
@@ -2405,10 +2405,16 @@ function rsvPickToggle(id){
 }
 function rsvPickDone(){ rsvPick=null; renderRsv(); if(soundOn&&Snd.good) Snd.good(); }
 function rsvToday(){ return ymd(new Date()); }
+/* 予約画面を開くときは必ず「一覧・今週・今日」から始める（前回の表示を持ち越さない） */
 function openRsv(){
   _rsvFrom = document.getElementById("admin").classList.contains("active") ? "admin" : "emp";
-  if(!rsvDate) rsvDate=rsvToday();
-  rsvPick=null;
+  rsvDate=rsvToday(); rsvVw="list"; rsvRange="week0"; rsvPick=null;
+  show("rsv"); renderRsv();
+}
+/* シフトの日付から飛んできたときだけ、その日のフロア図を開く */
+function openRsvDay(ds){
+  _rsvFrom = document.getElementById("admin").classList.contains("active") ? "admin" : "emp";
+  rsvDate=ds; rsvVw="map"; rsvPick=null;
   show("rsv"); renderRsv();
 }
 function rsvExit(){
