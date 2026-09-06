@@ -760,8 +760,11 @@ input.pin::placeholder{letter-spacing:10px}
           <p class="hint" style="margin-top:8px">止めない場合でも<b>「⚠️ 店外 ○m」と赤く記録</b >されるので、⏰勤怠タブを見ればすぐ分かります。<br>止める設定にしても、建物の中でGPSがずれた時のために「それでも打刻する」は残してあります（その打刻も記録に残ります）。</p>
         </div>
 
-        <div class="sec-title" style="margin-top:26px">🔑 パスワード（数字4桁）</div>
+        <div class="sec-title" style="margin-top:26px">🔑 ログインとパスワード</div>
         <div class="card" style="padding:16px">
+          <label class="chk"><input type="checkbox" id="setLoginOn" onchange="saveLoginCfg()">ログイン画面を表示する</label>
+          <div id="loginOffNote" style="margin:10px 0 4px"></div>
+          <p class="hint" style="margin:0 0 16px">オフにすると、アプリを開いたときに<b>パスワードを聞かずそのまま従業員として</b>入ります。テスト中や、お店の端末だけで使うときに便利です。<br>管理者画面に入りたいときは「🚪 ログアウト」を押せばログイン画面が出ます。</p>
           <div class="field"><label>従業員パスワード</label><input type="text" id="setEmpPw" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="0000"></div>
           <div class="field"><label>管理者パスワード</label><input type="text" id="setAdminPw" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="0000"></div>
           <button class="btn btn-primary btn-sm" onclick="savePasswords()">パスワードを保存</button>
@@ -835,7 +838,7 @@ const LS_KEY = "ettoShift_v1";
 const ROOM_KEY = "ettoShift_room";
 const PREF_KEY = "ettoShift_remember";  // "1"/"0" : ログイン保持の希望
 const SESS_KEY = "ettoShift_session";   // {role, empId} : 自動ログイン用
-const APP_VERSION = "2026.09.06-22";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
+const APP_VERSION = "2026.09.06-23";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
 let soundOn = localStorage.getItem("ettoShift_sound")!=="0";  // 操作音 ON/OFF（この端末ごと・既定ON）
 /* 管理者ログイン通知（開発者だけ受信）。GASをデプロイしたら /exec URL をここに貼る。空なら何もしない */
 const LOGIN_NOTIFY_URL = "";   // ★笑っとはメール通知なし（通知は亜子だけ）。使いたくなったらGASの /exec URL を貼る
@@ -862,6 +865,7 @@ let shiftView = "week0";     // "week0"=今週 | "week1"=来週 | "cal"=カレ�
 let adminCursor = new Date();
 let adminView = "agg";
 let cloud = { on:false, ref:null, room:null };
+let _skipLoginHook = null;   // 設定がクラウドから届いた後にログイン画面をスキップするか判定する
 let saveTimer = null;
 
 const WD = ["日","月","火","水","木","金","土"];
@@ -904,6 +908,7 @@ function migrate(s){
   s.settings.geo = Object.assign({on:false, radius:150, block:false}, s.settings.geo || {});
   if(!/^\d{2}:\d{2}$/.test(s.settings.open||"")) s.settings.open = OPEN_DEF;
   if(s.settings.home!=="shift") s.settings.home = HOME_DEF;
+  if(typeof s.settings.login!=="boolean") s.settings.login = true;   // 既定はログイン画面あり
   return s;
 }
 
@@ -923,7 +928,7 @@ function initCloud(){
       cloud.on = true;
       cloud.ref.on("value", snap=>{
         const v = snap.val();
-        if(v){ store = migrate(v); try{localStorage.setItem(LS_KEY,JSON.stringify(store));}catch(e){} renderAll(); }
+        if(v){ store = migrate(v); try{localStorage.setItem(LS_KEY,JSON.stringify(store));}catch(e){} renderAll(); if(_skipLoginHook) _skipLoginHook(); }
         else { cloud.ref.set(store).catch(()=>{}); }
       });
     }catch(e){ cloud.on=false; }
@@ -1049,6 +1054,7 @@ function doLogin(){
   document.getElementById("loginErr").textContent="";
   document.getElementById("pwInput").value="";
   isDev = (pw==="5572");
+  _wantLogin=false;
   recordLogin(role, isDev);
   const remember = document.getElementById("rememberChk").checked;
   localStorage.setItem(PREF_KEY, remember?"1":"0");
@@ -1071,7 +1077,7 @@ function confirmLogout(){
 }
 /* 従業員の表示状態を既定へ戻す（ログイン/ログアウト時。共有端末で前の人の選択が残らないように） */
 function resetEmpView(){ empViewMode="input"; empInputMode="week0"; empSchedDisp="week0"; empSchedScope="mine"; empCursor=new Date(); }
-function logout(){ resetEmpView(); _bootToRsv=false; if(typeof tcStopClock==="function"){ tcStopClock(); tcWho=null; tcFromQR=false; _tcFlash=null; } if(typeof rsvDate!=="undefined"){ rsvDate=""; rsvVw="map"; } localStorage.removeItem(SESS_KEY); currentEmpId=null; isDev=false; show("login"); setRole("emp"); }
+function logout(){ resetEmpView(); _bootToRsv=false; _wantLogin=true; if(typeof tcStopClock==="function"){ tcStopClock(); tcWho=null; tcFromQR=false; _tcFlash=null; } if(typeof rsvDate!=="undefined"){ rsvDate=""; rsvVw="map"; } localStorage.removeItem(SESS_KEY); currentEmpId=null; isDev=false; show("login"); setRole("emp"); }
 function unreadLogCount(){
   const lastReadT=Number(localStorage.getItem(LOG_READ_KEY)||0);
   return (store.loginLog||[]).filter(function(e){return !e.dev && (e.t||0)>lastReadT;}).length;
@@ -2019,6 +2025,26 @@ async function registerStoreLocation(){
   persist(); syncSettingsForm();
   if(soundOn&&Snd.good) Snd.good();
   toast("店の位置を登録しました");
+}
+/* ログイン画面を出すかどうか。false なら開いた時点で従業員として入る */
+function loginRequired(){ return !(store && store.settings && store.settings.login===false); }
+let _wantLogin=false;   // 自分でログアウトした直後は、勝手に入り直さない
+function maybeSkipLogin(){
+  if(_wantLogin || loginRequired()) return false;
+  if(document.getElementById("tc").classList.contains("active")) return false;
+  if(!document.getElementById("login").classList.contains("active")) return false;
+  const pw=document.getElementById("pwInput");
+  if(pw && pw.value) return false;      // 入力中は邪魔しない
+  role="emp"; isDev=false; currentEmpId=null;
+  show("emp"); renderEmpName(); afterLogin();
+  return true;
+}
+function saveLoginCfg(){
+  const e=document.getElementById("setLoginOn"); if(!e) return;
+  store.settings.login = !!e.checked;
+  persist(); syncSettingsForm();
+  if(soundOn&&Snd.good) Snd.good();
+  toast(e.checked ? "ログイン画面を表示します" : "ログイン画面なしで開きます");
 }
 function saveHomeView(){
   const e=document.getElementById("setHome"); if(!e) return;
@@ -3411,6 +3437,10 @@ function syncSettingsForm(){
   const gr=document.getElementById("setGeoRadius"); if(gr) gr.value=gc.radius;
   const ot=document.getElementById("setOpenTime"); if(ot) ot.value=openTime();
   const hv=document.getElementById("setHome"); if(hv) hv.value=homeView();
+  const lo=document.getElementById("setLoginOn"); if(lo) lo.checked=loginRequired();
+  const ln=document.getElementById("loginOffNote");
+  if(ln) ln.innerHTML = loginRequired() ? '' :
+    '<div class="note-warn">⚠️ いまオフです。<b>URLを知っている人は誰でも</b>予約（お客様のお名前・電話番号）やシフトを見られる状態になります。テストが終わったら戻してください。</div>';
   renderGeoStatus();
 }
 function savePasswords(){
@@ -3530,6 +3560,8 @@ window.addEventListener("orientationchange", function(){ setTimeout(function(){ 
 refreshSndBtn();
 initCloud();
 setRole("emp");
+// 他の端末で設定が変わって届いた時にも判定する（初回起動時はローカルの控えを見ている）
+_skipLoginHook = maybeSkipLogin;
 // 起動時の入口: 厨房のQR(?tc=1 / #tc)ならパスワード無しで打刻画面へ
 (function entry(){
   let q=""; try{ q=new URLSearchParams(location.search).get("tc")||""; }catch(e){}
@@ -3546,6 +3578,10 @@ setRole("emp");
   if(sess.role==="admin"){ role="admin"; syncSettingsForm(); show("admin"); adminTab("shift"); renderAll(); }
   else { role="emp"; currentEmpId=(sess.empId && staffById(sess.empId))?sess.empId:null; show("emp"); renderEmpName(); }
   afterLogin();
+})();
+// ログイン画面を出さない設定なら、そのまま入る
+(function(){
+  maybeSkipLogin();
 })();
 
 </script>
