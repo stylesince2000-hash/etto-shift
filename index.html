@@ -607,7 +607,7 @@ input.pin::placeholder{letter-spacing:10px}
       <img src="logo-light.png" alt="戻る" onclick="tcExit()" style="height:23px;width:auto;display:block;flex-shrink:0;cursor:pointer">
       <h1 class="tb-page">タイムカード<span class="sub">打刻</span></h1>
       <button class="dev-btn snd-btn" onclick="toggleSound()" title="操作音のON/OFF">🔊</button>
-      <button class="logout-btn" onclick="tcExit()">‹ 戻る</button>
+      <button class="logout-btn" onclick="tcBack()">‹ 戻る</button>
     </div>
     <div class="body">
       <div class="tc-clock" id="tcClock">--:--</div>
@@ -831,7 +831,7 @@ const LS_KEY = "ettoShift_v1";
 const ROOM_KEY = "ettoShift_room";
 const PREF_KEY = "ettoShift_remember";  // "1"/"0" : ログイン保持の希望
 const SESS_KEY = "ettoShift_session";   // {role, empId} : 自動ログイン用
-const APP_VERSION = "2026.09.06-18";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
+const APP_VERSION = "2026.09.06-20";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
 let soundOn = localStorage.getItem("ettoShift_sound")!=="0";  // 操作音 ON/OFF（この端末ごと・既定ON）
 /* 管理者ログイン通知（開発者だけ受信）。GASをデプロイしたら /exec URL をここに貼る。空なら何もしない */
 const LOGIN_NOTIFY_URL = "";   // ★笑っとはメール通知なし（通知は亜子だけ）。使いたくなったらGASの /exec URL を貼る
@@ -1788,6 +1788,8 @@ function openTimecard(sid, fromQR){
   tcFromQR=!!fromQR; tcWho=sid||null; _tcFlash=null; _tcBusy=false; clearTimeout(_tcFlashT); warmPos();
   show("tc"); renderTc(); tcStartClock();
 }
+/* 戻る: 人を選んだ状態なら名前の一覧へ。選び間違えたときはこれで戻せる */
+function tcBack(){ if(tcWho){ tcPick(null); return; } tcExit(); }
 function tcExit(){
   tcStopClock(); _tcFlash=null; clearTimeout(_tcFlashT);
   if(tcFromQR){ tcFromQR=false; tcWho=null; show("login"); setRole("emp"); return; }
@@ -1849,8 +1851,7 @@ function tcPersonHtml(){
     });
     h+='</div>';
   }
-  h+='<div class="tc-foot"><button class="btn btn-ghost btn-sm" onclick="tcPick(null)">👥 別の人に交代</button>'+
-     '<button class="btn btn-ghost btn-sm" onclick="tcReportOpen()">⚠️ 打刻を間違えた</button></div>';
+  h+='<div class="tc-foot"><button class="btn btn-ghost btn-sm" onclick="tcReportOpen()">⚠️ 間違えた・押し忘れた</button></div>';
   return h;
 }
 function tcAsk(k){
@@ -2032,8 +2033,8 @@ function tcFlashEnd(){ clearTimeout(_tcFlashT); _tcFlash=null; tcWho=null; rende
 /* ---------- 打刻ミスの報告 ---------- */
 function tcReportOpen(){
   const s=staffById(tcWho);
-  openModal('<h3>⚠️ 打刻の間違いを報告</h3><p class="msub">'+(s?esc(s.name)+' さん ／ ':'')+'店長に届きます。時刻を直してもらえます。</p>'+
-    '<div class="field"><textarea id="tcRepMsg" rows="3" placeholder="例: 出勤を押し忘れました。本当は18:00に出勤しています。"></textarea></div>'+
+  openModal('<h3>⚠️ 打刻の報告</h3><p class="msub">'+(s?esc(s.name)+' さん ／ ':'')+'<b>間違えた・押し忘れた</b>どちらでもOK。店長に届いて時刻を直してもらえます。</p>'+
+    '<div class="field"><textarea id="tcRepMsg" rows="3" placeholder="例: 出勤を押し忘れました。本当は18:00です／退勤を押す前に帰ってしまいました"></textarea></div>'+
     '<div style="display:flex;gap:10px"><button class="btn btn-ghost" onclick="closeModal()">やめる</button>'+
     '<button class="btn btn-primary" onclick="tcReportSend()">店長に報告する</button></div>');
   setTimeout(()=>{const i=document.getElementById("tcRepMsg"); if(i) i.focus();},100);
