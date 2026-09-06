@@ -502,6 +502,11 @@ input.pin::placeholder{letter-spacing:10px}
 .mrow .ab{font-size:11px;font-weight:800;color:var(--coffee);background:var(--foam);padding:3px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0}
 .mrow .ab.none{color:var(--rose);background:#f6e2e3;font-weight:600}
 .mrow .pr{font-size:15px;font-weight:800;color:var(--espresso);font-variant-numeric:tabular-nums;white-space:nowrap;flex-shrink:0;min-width:56px;text-align:right}
+.mrow.edit{cursor:default;padding:9px 13px}
+.mrow .abin{flex:0 0 104px;min-width:0;padding:8px 8px;font-size:13px;font-weight:700;border:1.5px solid var(--line);border-radius:9px;background:var(--paper);color:var(--coffee);font-family:inherit;text-align:center}
+.mrow .abin::placeholder{font-weight:500;color:var(--muted)}
+.mrow .abin:focus{outline:none;border-color:var(--latte);background:var(--milk)}
+.mrow .abin.empty{border-style:dashed;border-color:#e0a5aa;background:#fdf5f5}
 .rsv-warn{background:#fdf0e2;border:1px solid #ecd7b3;border-radius:12px;padding:9px 12px;font-size:12.5px;color:var(--coffee);margin-top:10px;line-height:1.6}
 </style>
 </head>
@@ -587,8 +592,13 @@ input.pin::placeholder{letter-spacing:10px}
       <button class="logout-btn" onclick="menuExit()">‹ 戻る</button>
     </div>
     <div class="body">
+      <div class="seg" style="margin-bottom:12px">
+        <button id="mkind_reg" class="on" onclick="menuSetKind('reg')">🍽 レギュラー</button>
+        <button id="mkind_rec" onclick="menuSetKind('rec')">⭐ おすすめ</button>
+      </div>
       <div class="field"><input type="search" class="msearch" id="menuQ" placeholder="🔍 料理名・省略名で探す" oninput="menuSearch(this.value)"></div>
       <div class="rsv-sum" id="menuCount"></div>
+      <button class="btn btn-ghost" id="abbrModeBtn" style="margin-bottom:14px;display:none" onclick="toggleAbbrMode()">✏️ 略名をまとめて入力</button>
       <div id="menuArea"></div>
       <button class="btn btn-primary" style="margin-top:18px" onclick="menuEdit(null)">＋ メニューを追加</button>
       <button class="btn btn-ghost" style="margin-top:10px" onclick="menuImportOpen()">📥 まとめて登録</button>
@@ -870,7 +880,7 @@ const LS_KEY = "ettoShift_v1";
 const ROOM_KEY = "ettoShift_room";
 const PREF_KEY = "ettoShift_remember";  // "1"/"0" : ログイン保持の希望
 const SESS_KEY = "ettoShift_session";   // {role, empId} : 自動ログイン用
-const APP_VERSION = "2026.09.06-25";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
+const APP_VERSION = "2026.09.06-26";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
 let soundOn = localStorage.getItem("ettoShift_sound")!=="0";  // 操作音 ON/OFF（この端末ごと・既定ON）
 /* 管理者ログイン通知（開発者だけ受信）。GASをデプロイしたら /exec URL をここに貼る。空なら何もしない */
 const LOGIN_NOTIFY_URL = "";   // ★笑っとはメール通知なし（通知は亜子だけ）。使いたくなったらGASの /exec URL を貼る
@@ -936,6 +946,7 @@ function migrate(s){
   s.tc = s.tc || {};
   s.rsv = s.rsv || {};
   if(!Array.isArray(s.menu)) s.menu = [];
+  s.menu.forEach(function(m){ if(m && m.kind!=="rec") m.kind="reg"; });   // 種類が無い既存分はレギュラー
   if(!Array.isArray(s.tcReq)) s.tcReq = [];
   s.settings.pay = Object.assign({}, PAY_DEF, s.settings.pay || {});
   s.settings.geo = Object.assign({on:false, radius:150, block:false}, s.settings.geo || {});
@@ -2894,17 +2905,22 @@ function rsvDoDelete(id){
 }
 
 const MENU_SEED = "# おつまみ\n冷奴,350\nたこわさび,480\nトマトスライス,400\n枝豆,380\n鯛わた酒盗,680\nあさりバター,700\nあさり酒蒸し,700\n牡蠣焼（かき）ポン酢,780\n辛子明太子,600\nいぶりがっこ,600\n# 揚げ物\nポテトフライ,480\nごぼうの唐揚げ,590\n揚げ出し豆腐,600\n鶏の唐揚げ,750\n鶏の唐揚げ チーズマヨネーズ,900\n豚トロネギまみれ,690\n手羽先の唐揚げ,600\nやげんなんこつ唐揚げ,690\nカキフライ,690\nにんにく丸揚げ,380\n# 鉄板・ご飯もの\n豚肉と山芋の鉄板焼き,680\nキムチと豚肉のとん平焼き,690\nコーンバター,590\n焼きカマンベール 〜富山きたざわ味噌〜,690\n牛ステーキ 〜バゲット添え〜,1300\nベーコンとレタスのチャーハン,850\n高菜チャーハン,850\n明太チャーハン,690\n和風パスタ,1050\nクリームパスタ,1200\nピリ辛焼きそば,650\n# お造り・その他\nお刺身盛り合わせ（2人前）,2400\n馬レバー,1390\n親鶏のお刺身,1500\n海鮮サラダ,900\nスモークサーモンのカルパッチョ風サラダ,900\n牛もつニラ炒め,1180\nブリのカマ塩焼き,830\n明太子とチーズのオムレツ 〜大葉ペコロス〜,800\nチーズオムレツ,750\n# デザート\nもちもちクレープアイス,550\nバニラアイス,400";
+
 /* =====================================================================
    メニュー表
-   ・名前 / 省略名（伝票に書くときの略称） / 値段 / カテゴリ を登録する
-   ・省略名は後で作る「伝票の読み取り」で突き合わせに使うので、手で入れてもらう
-   ・従業員・管理者のどちらからでも編集できる（現場で直せるように）
+   ・レギュラー / おすすめ（ホワイトボード）の2種類を切り替えて管理する
+   ・名前 / 省略名（伝票に書くときの略称） / 値段 / カテゴリ
+   ・省略名は「まとめて入力」モードで一覧のまま直接打てる（1品ずつ開かなくていい）
+   ・従業員・管理者のどちらからでも編集できる
    ===================================================================== */
+const MENU_KINDS = { reg:{l:"🍽 レギュラー", cat:"おつまみ"}, rec:{l:"⭐ おすすめ", cat:"おすすめ"} };
 function menuAll(){ return Array.isArray(store.menu) ? store.menu : []; }
+function menuKindOf(m){ return (m && m.kind==="rec") ? "rec" : "reg"; }
+function menuOf(kind){ return menuAll().filter(m=>menuKindOf(m)===kind); }
 function menuById(id){ return menuAll().find(m=>m.id===id)||null; }
-function menuCats(){
-  const seen=[], a=menuAll();
-  a.forEach(m=>{ const c=m.cat||"その他"; if(seen.indexOf(c)<0) seen.push(c); });
+function menuCats(kind){
+  const seen=[];
+  menuOf(kind).forEach(m=>{ const c=m.cat||"その他"; if(seen.indexOf(c)<0) seen.push(c); });
   return seen;
 }
 function menuSaveItem(m){
@@ -2916,68 +2932,113 @@ function menuSaveItem(m){
 function yenNum(n){ return "¥"+Math.round(Number(n)||0).toLocaleString("ja-JP"); }
 
 /* ---------- 画面 ---------- */
-let _menuFrom="emp", menuQ="";
+let _menuFrom="emp", menuQ="", menuKind="reg", menuAbbrMode=false;
 function openMenu(){
   const cur=document.querySelector(".screen.active");
   _menuFrom = cur ? cur.id : "emp";           // 予約・シフト・管理者、どこから来たか覚えておく
-  menuQ=""; show("menu"); renderMenu();
+  menuQ=""; menuAbbrMode=false; show("menu"); renderMenu();
 }
 function menuExit(){
+  menuAbbrMode=false;
   if(_menuFrom==="admin"){ show("admin"); renderAll(); }
   else if(_menuFrom==="rsv"){ show("rsv"); renderRsv(); }
   else { show("emp"); renderEmpName(); renderAll(); }
 }
+function menuSetKind(k){ menuKind=k; menuAbbrMode=false; renderMenu(); window.scrollTo(0,0); if(soundOn&&Snd.tap) Snd.tap(); }
 function menuSearch(v){ menuQ=(v||"").trim(); renderMenuList(); }
+function toggleAbbrMode(){
+  menuAbbrMode=!menuAbbrMode; renderMenuList();
+  if(soundOn&&Snd.tap) Snd.tap();
+  if(menuAbbrMode) setTimeout(()=>{ const i=document.querySelector(".mrow .abin"); if(i) i.focus(); },80);
+}
 function renderMenu(){
   const q=document.getElementById("menuQ"); if(q) q.value=menuQ;
+  ["reg","rec"].forEach(k=>{ const b=document.getElementById("mkind_"+k); if(b) b.classList.toggle("on", menuKind===k); });
   renderMenuList();
 }
 function renderMenuList(){
   const el=document.getElementById("menuArea"); if(!el) return;
-  const all=menuAll();
+  const all=menuOf(menuKind);
+  const noAb=all.filter(m=>!(m.abbr||"").trim()).length;
   const cnt=document.getElementById("menuCount");
   if(cnt){
-    const noAb=all.filter(m=>!(m.abbr||"").trim()).length;
     cnt.innerHTML = all.length
-      ? '<span>'+all.length+'品</span>'+(noAb?'<span style="background:#f6e2e3;color:var(--rose)">省略名なし '+noAb+'品</span>':'<span style="background:#e3efe7;color:var(--green)">省略名すべて登録済み</span>')
+      ? '<span>'+all.length+'品</span>'+(noAb?'<span style="background:#f6e2e3;color:var(--rose)">略名なし '+noAb+'品</span>':'<span style="background:#e3efe7;color:var(--green)">略名すべて入力済み</span>')
       : '<span>まだ登録がありません</span>';
   }
+  const btn=document.getElementById("abbrModeBtn");
+  if(btn){
+    btn.style.display = all.length ? "block" : "none";
+    btn.textContent = menuAbbrMode ? "✓ 入力を終える" : "✏️ 略名をまとめて入力";
+    btn.className = menuAbbrMode ? "btn btn-primary" : "btn btn-ghost";
+  }
   if(!all.length){
-    el.innerHTML='<div class="empty-state"><div class="ic">🍽</div>メニューがまだありません。<br>下の「まとめて登録」が手早いです。</div>';
+    el.innerHTML='<div class="empty-state"><div class="ic">'+(menuKind==="rec"?"⭐":"🍽")+'</div>'+
+      (menuKind==="rec"?'おすすめはまだありません。<br>ホワイトボードの内容を入れてください。':'メニューがまだありません。<br>下の「まとめて登録」が手早いです。')+'</div>';
     return;
   }
   const q=menuQ.toLowerCase();
   const hit=m=>!q || (m.name||"").toLowerCase().indexOf(q)>=0 || (m.abbr||"").toLowerCase().indexOf(q)>=0 || String(m.price||"").indexOf(q)>=0;
   let h="", any=false;
-  menuCats().forEach(function(c){
+  if(menuAbbrMode) h+='<div class="rsv-warn" style="margin:0 0 12px">✏️ 枠に<b>伝票に書いている略し方</b>をそのまま打ってください。<br>入力するたびに保存されます。Enterで次の品に進みます。</div>';
+  menuCats(menuKind).forEach(function(c){
     const items=all.filter(m=>(m.cat||"その他")===c && hit(m));
     if(!items.length) return;
     any=true;
     h+='<div class="sec-title" style="margin-top:18px">'+esc(c)+' <span style="margin-left:auto;color:var(--muted);font-weight:600">'+items.length+'品</span></div>';
     items.forEach(function(m){
-      h+='<div class="mrow" onclick="menuEdit(\''+m.id+'\')">'+
-         '<span class="nm">'+esc(m.name||"")+'</span>'+
-         (m.abbr?'<span class="ab">'+esc(m.abbr)+'</span>':'<span class="ab none">略なし</span>')+
-         '<span class="pr">'+yenNum(m.price)+'</span></div>';
+      if(menuAbbrMode){
+        h+='<div class="mrow edit"><span class="nm">'+esc(m.name||"")+'</span>'+
+           '<input class="abin'+(m.abbr?'':' empty')+'" type="text" maxlength="12" placeholder="略名" value="'+esc(m.abbr||"")+'" '+
+           'onchange="menuSetAbbr(\''+m.id+'\',this)" onkeydown="menuAbbrKey(event,this)">'+
+           '<span class="pr">'+yenNum(m.price)+'</span></div>';
+      }else{
+        h+='<div class="mrow" onclick="menuEdit(\''+m.id+'\')">'+
+           '<span class="nm">'+esc(m.name||"")+'</span>'+
+           (m.abbr?'<span class="ab">'+esc(m.abbr)+'</span>':'<span class="ab none">略なし</span>')+
+           '<span class="pr">'+yenNum(m.price)+'</span></div>';
+      }
     });
   });
-  el.innerHTML = any ? h : '<div class="empty-state"><div class="ic">🔍</div>「'+esc(menuQ)+'」に合うメニューはありません</div>';
+  el.innerHTML = any ? h : '<div class="empty-state"><div class="ic">🔍</div>「'+esc(menuQ)+'」に合うものはありません</div>';
+}
+/* 一覧のまま略名を保存する。再描画すると入力欄から離れてしまうので、その場だけ書き換える */
+function menuSetAbbr(id, el){
+  const m=menuById(id); if(!m) return;
+  m.abbr=(el.value||"").trim(); el.value=m.abbr;
+  persist();
+  el.classList.toggle("empty", !m.abbr);
+  const all=menuOf(menuKind), noAb=all.filter(x=>!(x.abbr||"").trim()).length;
+  const cnt=document.getElementById("menuCount");
+  if(cnt) cnt.innerHTML='<span>'+all.length+'品</span>'+(noAb?'<span style="background:#f6e2e3;color:var(--rose)">略名なし '+noAb+'品</span>':'<span style="background:#e3efe7;color:var(--green)">略名すべて入力済み</span>');
+}
+function menuAbbrKey(e, el){
+  if(e.key!=="Enter") return;
+  e.preventDefault();
+  el.blur();                                  // onchange を先に走らせる
+  const list=[].slice.call(document.querySelectorAll(".mrow .abin"));
+  const i=list.indexOf(el);
+  if(i>=0 && i+1<list.length){ list[i+1].focus(); list[i+1].select(); }
 }
 
 /* ---------- 追加・編集 ---------- */
 function menuEdit(id){
   const m = id ? menuById(id) : null;
-  const cats = menuCats();
+  const kind = m ? menuKindOf(m) : menuKind;
+  const cats = menuCats(kind);
   let h='<h3>'+(m?'🍽 メニューを編集':'🍽 メニューを追加')+'</h3>';
+  h+='<div class="field"><label>種類</label><div class="seg" style="margin:4px 0 0">'+
+     '<button id="mnK_reg" class="'+(kind==="reg"?"on":"")+'" onclick="mnPickKind(\'reg\')">🍽 レギュラー</button>'+
+     '<button id="mnK_rec" class="'+(kind==="rec"?"on":"")+'" onclick="mnPickKind(\'rec\')">⭐ おすすめ</button></div></div>';
   h+='<div class="field"><label>料理名</label><input type="text" id="mnName" maxlength="40" value="'+esc(m?(m.name||""):"")+'" placeholder="例: 鶏の唐揚げ"></div>';
   h+='<div class="field"><label>省略名（伝票に書くときの書き方）</label>'+
-     '<input type="text" id="mnAbbr" maxlength="12" value="'+esc(m?(m.abbr||""):"")+'" placeholder="例: カラアゲ">'+
-     '<p class="hint" style="margin-top:6px">伝票に実際に書いている略し方を、そのまま入れてください。あとで<b>伝票の読み取り</b>に使います。</p></div>';
+     '<input type="text" id="mnAbbr" maxlength="12" value="'+esc(m?(m.abbr||""):"")+'" placeholder="例: カラアゲ"></div>';
   h+='<div style="display:flex;gap:10px">'+
      '<div class="field" style="flex:1"><label>値段（円）</label><input type="number" id="mnPrice" inputmode="numeric" min="0" step="10" value="'+(m&&m.price?m.price:"")+'" placeholder="750"></div>'+
-     '<div class="field" style="flex:1"><label>カテゴリ</label><input type="text" id="mnCat" list="mnCatList" maxlength="16" value="'+esc(m?(m.cat||""):(cats[0]||""))+'" placeholder="例: 揚げ物">'+
+     '<div class="field" style="flex:1"><label>カテゴリ</label><input type="text" id="mnCat" list="mnCatList" maxlength="16" value="'+esc(m?(m.cat||""):(cats[0]||MENU_KINDS[kind].cat))+'">'+
      '<datalist id="mnCatList">'+cats.map(c=>'<option value="'+esc(c)+'">').join('')+'</datalist></div>'+
      '</div>';
+  h+='<input type="hidden" id="mnKind" value="'+kind+'">';
   h+='<div style="display:flex;gap:10px;margin-top:6px">'+
      '<button class="btn btn-ghost" onclick="closeModal()">閉じる</button>'+
      '<button class="btn btn-primary" onclick="menuSaveForm(\''+(m?m.id:"")+'\')">保存する</button></div>';
@@ -2985,15 +3046,24 @@ function menuEdit(id){
   openModal(h);
   setTimeout(()=>{ const i=document.getElementById("mnName"); if(i&&!m) i.focus(); },120);
 }
+function mnPickKind(k){
+  const e=document.getElementById("mnKind"); if(e) e.value=k;
+  ["reg","rec"].forEach(x=>{ const b=document.getElementById("mnK_"+x); if(b) b.classList.toggle("on", x===k); });
+  const c=document.getElementById("mnCat");
+  if(c && !c.value.trim()) c.value=MENU_KINDS[k].cat;
+  if(soundOn&&Snd.tap) Snd.tap();
+}
 function menuSaveForm(id){
   const g=x=>{ const e=document.getElementById(x); return e?e.value.trim():""; };
   const name=g("mnName");
   if(!name){ toast("料理名を入力してください"); return; }
   const p=parseInt(g("mnPrice"),10);
   const old = id ? menuById(id) : null;
-  menuSaveItem({ id: id||uid(), name:name, abbr:g("mnAbbr"), price:(isFinite(p)&&p>=0)?p:0,
-                 cat:g("mnCat")||"その他", ct: old?(old.ct||Date.now()):Date.now() });
-  closeModal(); renderMenuList();
+  const kind = g("mnKind")==="rec" ? "rec" : "reg";
+  menuSaveItem({ id: id||uid(), kind:kind, name:name, abbr:g("mnAbbr"), price:(isFinite(p)&&p>=0)?p:0,
+                 cat:g("mnCat")||MENU_KINDS[kind].cat, ct: old?(old.ct||Date.now()):Date.now() });
+  closeModal();
+  menuKind=kind; renderMenu();
   if(soundOn&&Snd.good) Snd.good();
   toast(id?"更新しました":"追加しました");
 }
@@ -3010,8 +3080,8 @@ function menuDoDelete(id){
 
 /* ---------- まとめて登録 ---------- */
 /* 1行1品。「名前,値段」または「名前,省略名,値段」。#で始まる行はカテゴリの区切り。 */
-function menuParse(text){
-  const out=[]; let cat="その他";
+function menuParse(text, kind){
+  const out=[]; let cat=MENU_KINDS[kind].cat;
   (text||"").split(/\r?\n/).forEach(function(line){
     const t=line.trim();
     if(!t) return;
@@ -3023,27 +3093,28 @@ function menuParse(text){
     else if(p.length===2){ name=p[0]; price=parseInt(p[1].replace(/[^\d]/g,""),10); }
     else { name=p[0]; }
     if(!name) return;
-    out.push({ id:uid(), name:name, abbr:abbr, price:isFinite(price)?price:0, cat:cat, ct:Date.now() });
+    out.push({ id:uid(), kind:kind, name:name, abbr:abbr, price:isFinite(price)?price:0, cat:cat, ct:Date.now() });
   });
   return out;
 }
 function menuImportOpen(){
-  const pre = menuAll().length ? "" : MENU_SEED;
-  openModal('<h3>📥 メニューをまとめて登録</h3>'+
+  const cur=menuOf(menuKind);
+  const pre = (menuKind==="reg" && !cur.length) ? MENU_SEED : "";
+  openModal('<h3>📥 '+MENU_KINDS[menuKind].l+' をまとめて登録</h3>'+
     '<p class="msub">1行に1品。<b>名前,値段</b> または <b>名前,省略名,値段</b>。<br>行の頭に <b>#</b> を書くとカテゴリの区切りになります。</p>'+
-    '<div class="field"><textarea id="mnBulk" rows="12" style="font-size:12.5px;line-height:1.7" placeholder="# 揚げ物\n鶏の唐揚げ,カラアゲ,750\nポテトフライ,480">'+esc(pre)+'</textarea></div>'+
+    '<div class="field"><textarea id="mnBulk" rows="12" style="font-size:12.5px;line-height:1.7" placeholder="鶏の唐揚げ,カラアゲ,750&#10;ポテトフライ,480">'+esc(pre)+'</textarea></div>'+
     '<div style="display:flex;gap:10px">'+
     '<button class="btn btn-ghost" onclick="closeModal()">閉じる</button>'+
     '<button class="btn btn-primary" onclick="menuImportRun(false)">追加する</button></div>'+
-    (menuAll().length?'<button class="btn btn-danger btn-sm" style="margin-top:12px" onclick="menuImportRun(true)">いまの内容を全部消して入れ替える</button>':'')+
-    '<p class="hint">省略名は空でも登録できます。あとから1品ずつ入れられます。</p>');
+    (cur.length?'<button class="btn btn-danger btn-sm" style="margin-top:12px" onclick="menuImportRun(true)">'+MENU_KINDS[menuKind].l+'を全部消して入れ替える</button>':'')+
+    '<p class="hint">省略名は空でも登録できます。あとから一覧でまとめて入れられます。</p>');
 }
 function menuImportRun(replace){
   const el=document.getElementById("mnBulk");
-  const items=menuParse(el?el.value:"");
+  const items=menuParse(el?el.value:"", menuKind);
   if(!items.length){ toast("読み取れる行がありません"); return; }
-  store.menu = replace ? items : menuAll().concat(items);
-  persist(); closeModal(); renderMenuList();
+  store.menu = (replace ? menuAll().filter(m=>menuKindOf(m)!==menuKind) : menuAll()).concat(items);
+  persist(); closeModal(); renderMenu();
   if(soundOn&&Snd.good) Snd.good();
   toast(items.length+"品を登録しました");
 }
