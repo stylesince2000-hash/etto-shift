@@ -1,0 +1,14 @@
+{
+  "name": "笑っと シフト",
+  "short_name": "笑っと",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f1f4f9",
+  "theme_color": "#22406b",
+  "icons": [
+    { "src": "icon.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
