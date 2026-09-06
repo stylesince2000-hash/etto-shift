@@ -363,6 +363,10 @@ input.pin::placeholder{letter-spacing:10px}
 .tbl tfoot td.nm{background:var(--paper)}
 .tab-badge{display:none;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#e53e3e;color:#fff;font-size:10px;font-weight:800;line-height:16px;margin-left:3px;vertical-align:middle}
 .qr-box img{width:220px;max-width:74%;height:auto;border-radius:10px;border:1px solid var(--line);background:#fff}
+.note-ok,.note-warn,.note-ng{border-radius:12px;padding:11px 13px;font-size:13px;line-height:1.65;margin-bottom:12px}
+.note-ok{background:#e3efe7;border:1px solid #cfe3d6;color:#2f6b52}
+.note-warn{background:#fdf0e2;border:1px solid #ecd7b3;color:#8a6320}
+.note-ng{background:#f6e2e3;border:1px solid #e6cccc;color:#a2454d}
 .wage-tag{font-size:11px;font-weight:700;color:var(--coffee);background:var(--foam);padding:2px 7px;border-radius:20px}
 .geo-tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;white-space:nowrap}
 .geo-ok{background:#e3efe7;color:var(--green)}
@@ -533,7 +537,6 @@ input.pin::placeholder{letter-spacing:10px}
           <button id="empSegRsv" onclick="openRsv()">📖 予約</button>
           <button id="empSegInput" class="on" onclick="empView('input')">✏️ 希望入力</button>
           <button id="empSegSched" onclick="empView('sched')">📅 確定シフト</button>
-          <button id="empSegTc" onclick="openTimecard(currentEmpId)">⏰ 打刻</button>
         </div>
         <div class="monthnav">
           <button onclick="empMonth(-1)">‹</button>
@@ -732,28 +735,29 @@ input.pin::placeholder{letter-spacing:10px}
           <button class="btn btn-primary btn-sm" onclick="savePayCfg()">給与設定を保存</button>
         </div>
 
-        <div class="sec-title" style="margin-top:26px">📍 打刻の場所チェック</div>
+        <div class="sec-title" style="margin-top:26px">⏰ タイムカード（打刻）</div>
+        <div class="card qr-box" style="padding:16px;text-align:center">
+          <div class="note-ok" style="text-align:left;margin-bottom:14px">🔒 <b>打刻は厨房のQRからだけ</b>できます。<br>アプリの中に打刻ボタンはありません。</div>
+          <img src="qr-timecard.png" alt="打刻用QRコード">
+          <p class="hint" style="margin-top:10px">このQRを<b>厨房に貼って</b>ください。スマホのカメラで読むと、パスワードなしで打刻画面が開きます。<br>印刷用のポスターはパソコンの <b>qr-poster.png</b> を使ってください。</p>
+          <div style="word-break:break-all;font-size:11px;color:var(--muted);margin-top:8px" id="tcQrUrl"></div>
+        </div>
+
+        <div class="sec-title" style="margin-top:26px">📍 どこで打刻したかを記録する</div>
         <div class="card" style="padding:16px">
-          <label class="chk"><input type="checkbox" id="setGeoOn" onchange="saveGeoCfg()">場所チェックを使う</label>
-          <div id="geoStatus" style="margin:10px 0"></div>
-          <button class="btn btn-ghost btn-sm" onclick="registerStoreLocation()">📍 今いる場所を店の位置として登録</button>
-          <p class="hint" style="margin-top:6px">※ <b>お店にいるときに</b>押してください。スマホの位置情報の許可が必要です。</p>
-          <div class="field" style="margin-top:14px"><label>許容する距離</label>
+          <div id="geoBanner"></div>
+          <button class="btn btn-primary btn-sm" style="width:100%" onclick="registerStoreLocation()">📍 今いる場所を店の位置として登録</button>
+          <p class="hint" style="margin-top:8px">※ 必ず<b>お店にいるときに</b>押してください。スマホから「位置情報を許可しますか？」と聞かれたら「許可」を選びます。</p>
+          <div id="geoStatus" style="margin:12px 0 0"></div>
+          <div class="field" style="margin-top:14px"><label>店とみなす範囲</label>
             <select id="setGeoRadius" onchange="saveGeoCfg()">
               <option value="100">100m</option><option value="150">150m</option>
               <option value="300">300m</option><option value="500">500m</option>
               <option value="1000">1km</option>
             </select></div>
-          <label class="chk"><input type="checkbox" id="setGeoBlock" onchange="saveGeoCfg()">店外なら打刻を止める（既定はオフ＝記録だけ）</label>
-          <p class="hint" style="margin-top:6px">オフの間は<b>打刻はできますが「⚠️ 店外」と赤く記録</b>されます。オンにすると警告画面が出ますが、GPSが狂った時のために「それでも打刻する」は残してあります（その場合も記録に残ります）。</p>
-        </div>
-
-        <div class="sec-title" style="margin-top:26px">📱 打刻用QRコード</div>
-        <div class="card qr-box" style="padding:16px;text-align:center">
-          <img src="qr-timecard.png" alt="打刻用QRコード">
-          <p class="hint" style="margin-top:10px">このQRを<b>厨房に貼って</b>ください。スマホのカメラで読むと、パスワードなしで打刻画面が開きます。</p>
-          <div style="word-break:break-all;font-size:11px;color:var(--muted);margin-top:8px" id="tcQrUrl"></div>
-          <button class="btn btn-ghost btn-sm" style="margin-top:12px" onclick="openTimecard(null)">⏰ 打刻画面を開いてみる</button>
+          <label class="chk"><input type="checkbox" id="setGeoOn" onchange="saveGeoCfg()">この機能を使う</label>
+          <label class="chk"><input type="checkbox" id="setGeoBlock" onchange="saveGeoCfg()">店の外なら打刻を止める</label>
+          <p class="hint" style="margin-top:8px">止めない場合でも<b>「⚠️ 店外 ○m」と赤く記録</b >されるので、⏰勤怠タブを見ればすぐ分かります。<br>止める設定にしても、建物の中でGPSがずれた時のために「それでも打刻する」は残してあります（その打刻も記録に残ります）。</p>
         </div>
 
         <div class="sec-title" style="margin-top:26px">🔑 パスワード（数字4桁）</div>
@@ -831,7 +835,7 @@ const LS_KEY = "ettoShift_v1";
 const ROOM_KEY = "ettoShift_room";
 const PREF_KEY = "ettoShift_remember";  // "1"/"0" : ログイン保持の希望
 const SESS_KEY = "ettoShift_session";   // {role, empId} : 自動ログイン用
-const APP_VERSION = "2026.09.06-20";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
+const APP_VERSION = "2026.09.06-21";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
 let soundOn = localStorage.getItem("ettoShift_sound")!=="0";  // 操作音 ON/OFF（この端末ごと・既定ON）
 /* 管理者ログイン通知（開発者だけ受信）。GASをデプロイしたら /exec URL をここに貼る。空なら何もしない */
 const LOGIN_NOTIFY_URL = "";   // ★笑っとはメール通知なし（通知は亜子だけ）。使いたくなったらGASの /exec URL を貼る
@@ -1984,16 +1988,26 @@ function geoBadge(e){
 function dayHasGeoWarn(bd,sid){ return tcPunches(bd,sid).some(function(e){ return e.g && (e.g.o||e.g.e); }); }
 
 /* ---- 管理者: 店の位置の登録 ---- */
+function geoRegistered(){ const c=geoCfg(); return isFinite(c.lat) && (c.lat||c.lng); }
 function renderGeoStatus(){
-  const el=document.getElementById("geoStatus"); if(!el) return;
-  const c=geoCfg();
-  if(!isFinite(c.lat) || (!c.lat && !c.lng)){
-    el.innerHTML='<div class="kv"><span class="k">店の位置</span><span class="v" style="color:var(--rose);font-weight:700">未登録</span></div>';
-    return;
+  const c=geoCfg(), reg=geoRegistered();
+  const bn=document.getElementById("geoBanner");
+  if(bn){
+    if(!reg){
+      bn.innerHTML='<div class="note-ng">⚠️ <b>まだ設定されていません</b><br>いまは、店の外から打刻されても分かりません。<br><b>お店にいるとき</b>に下のボタンを押すだけで使えるようになります。</div>';
+    }else if(!c.on){
+      bn.innerHTML='<div class="note-warn">店の位置は登録済みですが、<b>いまオフ</b>です。<br>下の「この機能を使う」にチェックを入れると記録が始まります。</div>';
+    }else{
+      bn.innerHTML='<div class="note-ok">✅ <b>使用中です</b><br>店から'+distLabel(c.radius)+'より離れた場所の打刻は「⚠️ 店外」と赤く記録され、⏰勤怠タブですぐ分かります。'+
+        (c.block?'<br>店の外では打刻を止める設定になっています。':'')+'</div>';
+    }
   }
-  el.innerHTML='<div class="kv"><span class="k">店の位置</span><span class="v">'+c.lat.toFixed(5)+', '+c.lng.toFixed(5)+'</span></div>'+
-    '<div class="kv"><span class="k">登録時の精度</span><span class="v">±'+Math.round(c.acc)+'m</span></div>'+
-    (c.t?'<div class="kv"><span class="k">登録日時</span><span class="v">'+nowStr(c.t)+'</span></div>':'');
+  const el=document.getElementById("geoStatus"); if(!el) return;
+  el.innerHTML = reg
+    ? '<div class="kv"><span class="k">登録した場所</span><span class="v">'+c.lat.toFixed(5)+', '+c.lng.toFixed(5)+'</span></div>'+
+      '<div class="kv"><span class="k">そのときの精度</span><span class="v">±'+Math.round(c.acc)+'m</span></div>'+
+      (c.t?'<div class="kv"><span class="k">登録した日時</span><span class="v">'+nowStr(c.t)+'</span></div>':'')
+    : '';
 }
 async function registerStoreLocation(){
   toast("位置を取得しています…");
