@@ -388,12 +388,15 @@ input.pin::placeholder{letter-spacing:10px}
 .floor{background:var(--milk);border-radius:18px;padding:12px 10px 10px;box-shadow:var(--shadow-sm);position:relative}
 .fl-zone{font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:1px;margin:0 0 6px 2px}
 .fl-top{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px}
-.fl-bottom{display:flex;gap:6px;margin-top:14px;align-items:center}
-.fl-bottom .z8{flex:0 0 56px}
+.fl-bottom{display:flex;gap:5px;align-items:stretch}
+/* 座敷8は上段の卓と同じ幅（=6分割の1コマ）にして、座敷1の真下に揃える */
+.fl-bottom>.z8{flex:0 0 calc((100% - 25px) / 6);display:flex}
 .fl-cwrap{flex:1;min-width:0;border:1.5px dashed var(--line);border-radius:12px;padding:6px 5px 4px}
 .fl-seats{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
 .fl-kitchen{text-align:center;font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:2px;margin-top:5px}
-.fl-entry{text-align:center;font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:2px;margin-top:8px}
+/* 入口は左の壁。座敷1と座敷8のあいだにある */
+.fl-gap{display:flex;align-items:center;margin:9px 0 7px}
+.fl-entry{font-size:10.5px;font-weight:800;color:var(--coffee);letter-spacing:1.5px;border-left:4px solid var(--latte);padding:3px 0 3px 8px;white-space:nowrap}
 
 .tbl-box{border:1.5px solid var(--line);background:var(--paper);border-radius:10px;padding:5px 2px 4px;text-align:center;cursor:pointer;font-family:inherit;min-height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;overflow:hidden}
 .tbl-box .no{font-size:15px;font-weight:800;color:var(--espresso);line-height:1}
@@ -411,7 +414,7 @@ input.pin::placeholder{letter-spacing:10px}
 .tbl-box.done{background:#e8f0ea;border-color:var(--green)}
 .tbl-box.done .tm{color:var(--green)}
 .tbl-box:active{transform:scale(.95)}
-.tbl-box.z8{min-height:76px}
+.tbl-box.z8{width:100%;min-height:78px}
 .seat-c{border:1.5px solid var(--line);background:var(--paper);border-radius:50%;aspect-ratio:1/1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;font-family:inherit;padding:0;overflow:hidden}
 .seat-c .no{font-size:12.5px;font-weight:800;color:var(--espresso);line-height:1.05}
 .seat-c .tm{font-size:8.5px;font-weight:700;color:var(--rose);line-height:1.15}
@@ -748,7 +751,7 @@ const LS_KEY = "ettoShift_v1";
 const ROOM_KEY = "ettoShift_room";
 const PREF_KEY = "ettoShift_remember";  // "1"/"0" : ログイン保持の希望
 const SESS_KEY = "ettoShift_session";   // {role, empId} : 自動ログイン用
-const APP_VERSION = "2026.09.06-5";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
+const APP_VERSION = "2026.09.06-6";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
 let soundOn = localStorage.getItem("ettoShift_sound")!=="0";  // 操作音 ON/OFF（この端末ごと・既定ON）
 /* 管理者ログイン通知（開発者だけ受信）。GASをデプロイしたら /exec URL をここに貼る。空なら何もしない */
 const LOGIN_NOTIFY_URL = "";   // ★笑っとはメール通知なし（通知は亜子だけ）。使いたくなったらGASの /exec URL を貼る
@@ -2273,11 +2276,11 @@ function floorHtml(ds){
   h+='<div class="fl-zone">座敷</div><div class="fl-top">';
   ZASHIKI.forEach((n,i)=>{ h+=seatCell(ds,"z"+n,"tbl-box",jn[i]); });
   h+='</div>';
+  h+='<div class="fl-gap"><span class="fl-entry">◀ 入口</span></div>';
   h+='<div class="fl-bottom"><div class="z8">'+seatCell(ds,"z"+ZASHIKI8,"tbl-box z8")+'</div>'+
      '<div class="fl-cwrap"><div class="fl-zone" style="text-align:center;margin-bottom:5px">カウンター</div><div class="fl-seats">';
   COUNTER.forEach(n=>{ h+=seatCell(ds,"c"+n,"seat-c"); });
   h+='</div><div class="fl-kitchen">キッチン</div></div></div>';
-  h+='<div class="fl-entry">↑ 入口</div>';
   h+='</div>';
 
   const un=rsvAll(ds).filter(r=>!(r.seats||[]).length);
