@@ -377,11 +377,22 @@ input.pin::placeholder{letter-spacing:10px}
 .chk input{width:20px;height:20px;accent-color:var(--coffee);margin:0;flex-shrink:0}
 
 /* ===================== 予約（フロア図＋リスト） ===================== */
-.rsv-head{display:flex;align-items:center;gap:8px;background:var(--milk);border-radius:16px;padding:8px 10px;box-shadow:var(--shadow-sm);margin-bottom:12px}
-.rsv-head button{background:var(--foam);border:none;width:40px;height:40px;border-radius:11px;font-size:18px;color:var(--espresso);cursor:pointer;flex-shrink:0}
-.rsv-head .dl{flex:1;text-align:center;font-size:16px;font-weight:700;color:var(--espresso);min-width:0}
-.rsv-head .dl small{display:block;font-size:11px;font-weight:500;color:var(--muted);letter-spacing:.5px}
 .rsv-sum{display:flex;gap:8px;justify-content:center;margin-bottom:14px;flex-wrap:wrap}
+/* 週の日付を横に並べた帯（席で見る用） */
+.dstrip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-bottom:14px}
+.dstrip .ds{background:var(--milk);border:1.5px solid var(--line);border-radius:12px;padding:6px 0 5px;display:flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer;font-family:inherit;box-shadow:var(--shadow-sm);overflow:hidden}
+.dstrip .ds .w{font-size:10px;font-weight:700;color:var(--muted);line-height:1.1}
+.dstrip .ds .d{font-size:16px;font-weight:800;color:var(--espresso);line-height:1.15}
+.dstrip .ds .n{font-size:9.5px;font-weight:800;color:#fff;background:var(--latte);border-radius:20px;min-width:16px;line-height:16px;padding:0 3px}
+.dstrip .ds .n0{height:16px}
+.dstrip .ds.sun .w,.dstrip .ds.sun .d{color:var(--rose)}
+.dstrip .ds.sat .w,.dstrip .ds.sat .d{color:#5a7d9a}
+.dstrip .ds.cl{background:#faf1f2;border-style:dashed}
+.dstrip .ds.today{border-color:var(--latte)}
+.dstrip .ds.on{background:var(--coffee);border-color:var(--coffee);box-shadow:0 0 0 1.5px var(--coffee) inset}
+.dstrip .ds.on .w,.dstrip .ds.on .d{color:#fff}
+.dstrip .ds.on .n{background:rgba(255,255,255,.32)}
+.dstrip .ds:active{transform:scale(.95)}
 .rsv-sum span{font-size:12.5px;font-weight:700;color:var(--coffee);background:var(--foam);padding:5px 12px;border-radius:20px}
 
 /* フロア図 */
@@ -564,21 +575,17 @@ input.pin::placeholder{letter-spacing:10px}
       <button class="logout-btn" onclick="rsvExit()">📅 シフト</button>
     </div>
     <div class="body">
-      <div class="rsv-head">
-        <button onclick="rsvDay(-1)">‹</button>
-        <div class="dl" id="rsvDateLabel" onclick="rsvPickDate()"></div>
-        <button onclick="rsvDay(1)">›</button>
-      </div>
       <div class="seg" style="margin-bottom:12px">
         <button id="rsvSegList" class="on" onclick="rsvView('list')">📋 一覧</button>
         <button id="rsvSegMap" onclick="rsvView('map')">🗺 席で見る</button>
       </div>
-      <div class="seg" id="rsvRangeSeg" style="margin-bottom:12px;display:none">
-        <button id="rsvR_week0" onclick="rsvRangeSet('week0')">今週</button>
-        <button id="rsvR_week1" onclick="rsvRangeSet('week1')">来週</button>
-        <button id="rsvR_week2" onclick="rsvRangeSet('week2')">再来週</button>
-        <button id="rsvR_cal" onclick="rsvRangeSet('cal')">📅</button>
+      <div class="seg" id="rsvRangeSeg" style="margin-bottom:12px">
+        <button id="rsvR_week0" onclick="rsvRangeTap('week0')">今週</button>
+        <button id="rsvR_week1" onclick="rsvRangeTap('week1')">来週</button>
+        <button id="rsvR_week2" onclick="rsvRangeTap('week2')">再来週</button>
+        <button id="rsvR_cal" onclick="rsvRangeTap('cal')">📅</button>
       </div>
+      <div id="rsvStrip"></div>
       <div class="monthnav" id="rsvMonthNav" style="display:none">
         <button onclick="rsvMonth(-1)">‹</button>
         <span class="mlabel" id="rsvMonthLabel"></span>
@@ -821,7 +828,7 @@ const LS_KEY = "ettoShift_v1";
 const ROOM_KEY = "ettoShift_room";
 const PREF_KEY = "ettoShift_remember";  // "1"/"0" : ログイン保持の希望
 const SESS_KEY = "ettoShift_session";   // {role, empId} : 自動ログイン用
-const APP_VERSION = "2026.09.06-16";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
+const APP_VERSION = "2026.09.06-17";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
 let soundOn = localStorage.getItem("ettoShift_sound")!=="0";  // 操作音 ON/OFF（この端末ごと・既定ON）
 /* 管理者ログイン通知（開発者だけ受信）。GASをデプロイしたら /exec URL をここに貼る。空なら何もしない */
 const LOGIN_NOTIFY_URL = "";   // ★笑っとはメール通知なし（通知は亜子だけ）。使いたくなったらGASの /exec URL を貼る
@@ -2317,6 +2324,47 @@ let rsvRange="week0";          // 一覧の範囲: week0=今週 / week1=来週 /
 let rsvCursor=new Date();      // カレンダー表示の月
 function rsvRangeSet(v){ rsvRange=v; rsvPick=null; renderRsv(); window.scrollTo(0,0); if(soundOn&&Snd.tap) Snd.tap(); }
 function rsvMonth(n){ rsvCursor.setMonth(rsvCursor.getMonth()+n); renderRsv(); }
+/* 指定日を含む週（月〜日） */
+function rsvWeekDates(ds){
+  const mon=mondayOf(new Date(ds)), a=[];
+  for(let i=0;i<7;i++){ const d=new Date(mon); d.setDate(mon.getDate()+i); a.push(ymd(d)); }
+  return a;
+}
+/* 今週を0として、その日が何週先か */
+function weekOffsetOf(ds){
+  const a=mondayOf(new Date()), b=mondayOf(new Date(ds));
+  return Math.round((b-a)/604800000);
+}
+/* 曜日を保ったまま週を移動する */
+function rsvJumpWeek(n){
+  const cur=new Date(rsvDate||rsvToday()), dow=(cur.getDay()+6)%7;
+  const mon=mondayOf(new Date()); mon.setDate(mon.getDate()+n*7+dow);
+  rsvDate=ymd(mon); rsvPick=null; renderRsv(); window.scrollTo(0,0);
+  if(soundOn&&Snd.tap) Snd.tap();
+}
+/* 今週/来週/再来週/📅 は、フロア図では「日付を動かす」・一覧では「範囲を変える」 */
+function rsvRangeTap(v){
+  if(rsvVw==="map"){
+    if(v==="cal"){ rsvVw="list"; rsvRange="cal"; rsvPick=null; renderRsv(); window.scrollTo(0,0); if(soundOn&&Snd.tap) Snd.tap(); return; }
+    rsvJumpWeek(v==="week1"?1:(v==="week2"?2:0)); return;
+  }
+  rsvRangeSet(v);
+}
+function rsvStripHtml(){
+  const ds=rsvDate||rsvToday(), today=rsvToday();
+  let h='<div class="dstrip">';
+  rsvWeekDates(ds).forEach(function(x){
+    const d=new Date(x), n=rsvAll(x).length;
+    let c="ds";
+    if(x===ds) c+=" on";
+    if(x===today) c+=" today";
+    if(d.getDay()===0) c+=" sun"; else if(d.getDay()===6) c+=" sat";
+    if(isClosed(x)) c+=" cl";
+    h+='<button class="'+c+'" onclick="rsvGoDay(\''+x+'\')"><span class="w">'+WD[d.getDay()]+'</span>'+
+       '<span class="d">'+d.getDate()+'</span>'+(n?'<span class="n">'+n+'</span>':'<span class="n0"></span>')+'</button>';
+  });
+  return h+'</div>';
+}
 /* 一覧の週表示では、下の追加ボタンは「今日（範囲外なら週の初日）」を対象にする */
 function rsvAddTarget(){
   if(rsvVw==="map" || rsvRange==="cal") return rsvDate||rsvToday();
@@ -2350,28 +2398,20 @@ function rsvExit(){
   else { show("emp"); renderEmpName(); renderAll(); }
 }
 function rsvView(v){ rsvVw=v; if(v!=="map") rsvPick=null; renderRsv(); window.scrollTo(0,0); if(soundOn&&Snd.tap) Snd.tap(); }
-function rsvDay(n){ rsvDate=addDays(rsvDate||rsvToday(), n); rsvPick=null; renderRsv(); if(soundOn&&Snd.tap) Snd.tap(); }
-function rsvPickDate(){
-  openModal('<h3>📅 日付を選ぶ</h3><div class="field"><input type="date" id="rsvDpk" value="'+(rsvDate||rsvToday())+'"></div>'+
-    '<div style="display:flex;gap:10px"><button class="btn btn-ghost" onclick="closeModal();rsvDate=rsvToday();renderRsv()">今日にする</button>'+
-    '<button class="btn btn-primary" onclick="rsvApplyDate()">この日を見る</button></div>');
-}
-function rsvApplyDate(){
-  const v=(document.getElementById("rsvDpk")||{}).value;
-  if(v) rsvDate=v;
-  rsvPick=null; closeModal(); renderRsv();
-}
 function renderRsv(){
   const ds=rsvDate||rsvToday(), d=new Date(ds);
   const isMap=(rsvVw==="map");
-  const lab=document.getElementById("rsvDateLabel");
-  if(lab) lab.innerHTML=(d.getMonth()+1)+'月'+d.getDate()+'日 ('+WD[d.getDay()]+')<small>'+(ds===rsvToday()?'今日':'タップで日付変更')+'</small>';
   document.getElementById("rsvSegMap").classList.toggle("on", isMap);
   document.getElementById("rsvSegList").classList.toggle("on", !isMap);
-  /* 日付ナビはフロア図のときだけ。一覧のときは範囲の切り替えを出す */
-  const dayNav=document.querySelector("#rsv .rsv-head"); if(dayNav) dayNav.style.display=isMap?"flex":"none";
-  const rseg=document.getElementById("rsvRangeSeg"); if(rseg) rseg.style.display=isMap?"none":"flex";
-  ["week0","week1","week2","cal"].forEach(x=>{ const b=document.getElementById("rsvR_"+x); if(b) b.classList.toggle("on", !isMap && rsvRange===x); });
+  /* 今週/来週/再来週/📅 は両方の表示で出す（フロア図では日付の移動、一覧では範囲の切り替え） */
+  const off=weekOffsetOf(ds);
+  ["week0","week1","week2","cal"].forEach((x,i)=>{
+    const b=document.getElementById("rsvR_"+x); if(!b) return;
+    b.classList.toggle("on", isMap ? (x!=="cal" && off===i) : (rsvRange===x));
+  });
+  /* 週の日付の帯はフロア図のときだけ */
+  const strip=document.getElementById("rsvStrip");
+  if(strip){ strip.style.display=isMap?"block":"none"; if(isMap) strip.innerHTML=rsvStripHtml(); }
   const mnav=document.getElementById("rsvMonthNav");
   if(mnav){
     const showCal=(!isMap && rsvRange==="cal");
@@ -2390,6 +2430,7 @@ function renderRsv(){
     if(isMap){
       const list=rsvAll(ds), heads=list.reduce((a,r)=>a+(Number(r.n)||0),0);
       const un=list.filter(r=>!(r.seats||[]).length).length;
+      h+='<span style="background:var(--coffee);color:#fff">'+(d.getMonth()+1)+'月'+d.getDate()+'日('+WD[d.getDay()]+')'+(ds===rsvToday()?' 今日':'')+'</span>';
       if(list.length){
         h+='<span>'+list.length+'組</span><span>合計 '+heads+'名</span>';
         if(un) h+='<span style="background:#f6e2e3;color:var(--rose)">席未定 '+un+'組</span>';
