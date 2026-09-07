@@ -503,6 +503,8 @@ input.pin::placeholder{letter-spacing:10px}
 .mrow .ab.none{color:var(--rose);background:#f6e2e3;font-weight:600}
 .mrow .pr{font-size:15px;font-weight:800;color:var(--espresso);font-variant-numeric:tabular-nums;white-space:nowrap;flex-shrink:0;min-width:56px;text-align:right}
 .mrow.edit{cursor:default;padding:9px 13px}
+/* 略名の入力中は「入力を終える」を上に貼り付けておく（下までスクロールしても押せるように） */
+.abbr-stick{position:sticky;top:calc(env(safe-area-inset-top) + 70px);z-index:26;box-shadow:0 8px 20px rgba(21,39,66,.28)}
 .mrow .abin{flex:0 0 104px;min-width:0;padding:8px 8px;font-size:13px;font-weight:700;border:1.5px solid var(--line);border-radius:9px;background:var(--paper);color:var(--coffee);font-family:inherit;text-align:center}
 .mrow .abin::placeholder{font-weight:500;color:var(--muted)}
 .mrow .abin:focus{outline:none;border-color:var(--latte);background:var(--milk)}
@@ -880,7 +882,7 @@ const LS_KEY = "ettoShift_v1";
 const ROOM_KEY = "ettoShift_room";
 const PREF_KEY = "ettoShift_remember";  // "1"/"0" : ログイン保持の希望
 const SESS_KEY = "ettoShift_session";   // {role, empId} : 自動ログイン用
-const APP_VERSION = "2026.09.06-26";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
+const APP_VERSION = "2026.09.07-1";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
 let soundOn = localStorage.getItem("ettoShift_sound")!=="0";  // 操作音 ON/OFF（この端末ごと・既定ON）
 /* 管理者ログイン通知（開発者だけ受信）。GASをデプロイしたら /exec URL をここに貼る。空なら何もしない */
 const LOGIN_NOTIFY_URL = "";   // ★笑っとはメール通知なし（通知は亜子だけ）。使いたくなったらGASの /exec URL を貼る
@@ -2970,7 +2972,10 @@ function renderMenuList(){
   if(btn){
     btn.style.display = all.length ? "block" : "none";
     btn.textContent = menuAbbrMode ? "✓ 入力を終える" : "✏️ 略名をまとめて入力";
-    btn.className = menuAbbrMode ? "btn btn-primary" : "btn btn-ghost";
+    btn.className = menuAbbrMode ? "btn btn-primary abbr-stick" : "btn btn-ghost";
+    /* 上部バーの高さは端末（ノッチの有無）で変わるので、実寸を測って貼り付け位置にする */
+    if(menuAbbrMode){ const tb=document.querySelector("#menu .topbar"); btn.style.top=(tb?tb.offsetHeight:70)+"px"; }
+    else btn.style.top="";
   }
   if(!all.length){
     el.innerHTML='<div class="empty-state"><div class="ic">'+(menuKind==="rec"?"⭐":"🍽")+'</div>'+
