@@ -493,7 +493,7 @@ input.pin::placeholder{letter-spacing:10px}
 .rd-add{margin-left:auto;background:var(--foam);border:none;color:var(--espresso);width:34px;height:34px;border-radius:11px;font-size:18px;cursor:pointer;font-family:inherit;flex-shrink:0;line-height:1}
 .rsv-day.today .rd-head{border-left:4px solid var(--latte);padding-left:8px}
 .day .rc{font-size:10px;font-weight:800;color:#fff;background:var(--coffee);border-radius:20px;padding:0 5px;margin-top:2px;line-height:15px}
-.home-btn{margin-top:24px}
+
 /* メニュー表 */
 .msearch{width:100%;margin-bottom:6px}
 .mrow{background:var(--milk);border-radius:12px;padding:11px 13px;display:flex;align-items:center;gap:9px;margin-bottom:8px;box-shadow:var(--shadow-sm);cursor:pointer}
@@ -545,14 +545,17 @@ input.pin::placeholder{letter-spacing:10px}
       <button class="logout-btn" onclick="logout()">🚪 ログアウト</button>
     </div>
     <div class="body">
+      <div class="tabs">
+        <button onclick="goRsv()">📖 予約</button>
+        <button class="on">📅 シフト</button>
+        <button onclick="openMenu()">🍽 メニュー</button>
+      </div>
       <div id="empNotice"></div>
       <div id="empPickName"></div>
       <div id="empCalArea" style="display:none">
         <div class="seg" style="margin-bottom:14px">
-          <button id="empSegRsv" onclick="openRsv()">📖 予約</button>
           <button id="empSegInput" class="on" onclick="empView('input')">✏️ 希望入力</button>
           <button id="empSegSched" onclick="empView('sched')">📅 確定シフト</button>
-          <button id="empSegMenu" onclick="openMenu()">🍽 メニュー</button>
         </div>
         <div class="monthnav">
           <button onclick="empMonth(-1)">‹</button>
@@ -591,9 +594,14 @@ input.pin::placeholder{letter-spacing:10px}
       <img src="logo-light.png" alt="食・酒・楽 笑っと" style="height:23px;width:auto;display:block;flex-shrink:0">
       <h1 class="tb-page">メニュー<span class="sub">品書き</span></h1>
       <button class="dev-btn snd-btn" onclick="toggleSound()" title="操作音のON/OFF">🔊</button>
-      <button class="logout-btn" onclick="menuExit()">‹ 戻る</button>
+      <button class="logout-btn" onclick="logout()">🚪 ログアウト</button>
     </div>
     <div class="body">
+      <div class="tabs">
+        <button onclick="goRsv()">📖 予約</button>
+        <button onclick="goShift()">📅 シフト</button>
+        <button class="on">🍽 メニュー</button>
+      </div>
       <div class="seg" style="margin-bottom:12px">
         <button id="mkind_reg" class="on" onclick="menuSetKind('reg')">🍽 レギュラー</button>
         <button id="mkind_rec" onclick="menuSetKind('rec')">⭐ おすすめ</button>
@@ -604,10 +612,6 @@ input.pin::placeholder{letter-spacing:10px}
       <div id="menuArea"></div>
       <button class="btn btn-primary" style="margin-top:18px" onclick="menuEdit(null)">＋ メニューを追加</button>
       <button class="btn btn-ghost" style="margin-top:10px" onclick="menuImportOpen()">📥 まとめて登録</button>
-      <div class="home-btn" style="display:flex;gap:10px">
-        <button class="btn btn-ghost" onclick="menuExit()">‹ 戻る</button>
-        <button class="btn btn-ghost" onclick="logout()">🚪 ログアウト</button>
-      </div>
     </div>
   </section>
 
@@ -617,9 +621,14 @@ input.pin::placeholder{letter-spacing:10px}
       <img src="logo-light.png" alt="食・酒・楽 笑っと" style="height:23px;width:auto;display:block;flex-shrink:0">
       <h1 class="tb-page">予約<span class="sub" id="rsvSub">よやく</span></h1>
       <button class="dev-btn snd-btn" onclick="toggleSound()" title="操作音のON/OFF">🔊</button>
-      <button class="logout-btn" onclick="rsvExit()">📅 シフト</button>
+      <button class="logout-btn" onclick="logout()">🚪 ログアウト</button>
     </div>
     <div class="body">
+      <div class="tabs">
+        <button class="on">📖 予約</button>
+        <button onclick="goShift()">📅 シフト</button>
+        <button onclick="openMenu()">🍽 メニュー</button>
+      </div>
       <div class="seg" style="margin-bottom:12px">
         <button id="rsvSegList" class="on" onclick="rsvView('list')">📋 一覧</button>
         <button id="rsvSegMap" onclick="rsvView('map')">🗺 席で見る</button>
@@ -639,11 +648,6 @@ input.pin::placeholder{letter-spacing:10px}
       <div class="rsv-sum" id="rsvSum"></div>
       <div id="rsvArea"></div>
       <button class="btn btn-primary" style="margin-top:18px" id="rsvAddBtn" onclick="rsvAddOn(rsvAddTarget())">＋ 予約を追加</button>
-      <div class="home-btn" style="display:flex;gap:10px">
-        <button class="btn btn-ghost" onclick="rsvExit()">📅 シフト</button>
-        <button class="btn btn-ghost" onclick="openMenu()">🍽 メニュー</button>
-      </div>
-      <button class="btn btn-ghost" style="margin-top:10px" onclick="logout()">🚪 ログアウト</button>
     </div>
   </section>
 
@@ -882,7 +886,7 @@ const LS_KEY = "ettoShift_v1";
 const ROOM_KEY = "ettoShift_room";
 const PREF_KEY = "ettoShift_remember";  // "1"/"0" : ログイン保持の希望
 const SESS_KEY = "ettoShift_session";   // {role, empId} : 自動ログイン用
-const APP_VERSION = "2026.09.07-1";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
+const APP_VERSION = "2026.09.07-2";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
 let soundOn = localStorage.getItem("ettoShift_sound")!=="0";  // 操作音 ON/OFF（この端末ごと・既定ON）
 /* 管理者ログイン通知（開発者だけ受信）。GASをデプロイしたら /exec URL をここに貼る。空なら何もしない */
 const LOGIN_NOTIFY_URL = "";   // ★笑っとはメール通知なし（通知は亜子だけ）。使いたくなったらGASの /exec URL を貼る
@@ -2409,7 +2413,7 @@ function rsvClearSeats(ds,id){
 }
 
 /* ---------- 画面 ---------- */
-let rsvDate="", rsvVw="list", _rsvFrom="emp";   // 既定は一覧（営業中はこちらを見るため）
+let rsvDate="", rsvVw="list";   // 既定は一覧（営業中はこちらを見るため）
 let rsvRange="week0";          // 一覧の範囲: week0=今週 / week1=来週 / week2=再来週 / cal=カレンダー
 let rsvCursor=new Date();      // カレンダー表示の月
 function rsvRangeSet(v){ rsvRange=v; rsvPick=null; renderRsv(); window.scrollTo(0,0); if(soundOn&&Snd.tap) Snd.tap(); }
@@ -2477,22 +2481,25 @@ function rsvPickToggle(id){
 }
 function rsvPickDone(){ rsvPick=null; renderRsv(); if(soundOn&&Snd.good) Snd.good(); }
 function rsvToday(){ return ymd(new Date()); }
+/* 画面の行き来はこの3つに集約する（上部の共通ナビから呼ぶ） */
+function baseScreen(){ return role==="admin" ? "admin" : "emp"; }
+function goShift(){
+  if(typeof menuAbbrMode!=="undefined") menuAbbrMode=false;
+  if(baseScreen()==="admin"){ show("admin"); renderAll(); }
+  else { show("emp"); renderEmpName(); renderAll(); }
+}
+function goRsv(){ openRsv(); }
 /* 予約画面を開くときは必ず「一覧・今週・今日」から始める（前回の表示を持ち越さない） */
 function openRsv(){
-  _rsvFrom = document.getElementById("admin").classList.contains("active") ? "admin" : "emp";
   rsvDate=rsvToday(); rsvVw="list"; rsvRange="week0"; rsvPick=null;
   show("rsv"); renderRsv();
 }
 /* シフトの日付から飛んできたときだけ、その日のフロア図を開く */
 function openRsvDay(ds){
-  _rsvFrom = document.getElementById("admin").classList.contains("active") ? "admin" : "emp";
   rsvDate=ds; rsvVw="map"; rsvPick=null;
   show("rsv"); renderRsv();
 }
-function rsvExit(){
-  if(_rsvFrom==="admin"){ show("admin"); renderAll(); }
-  else { show("emp"); renderEmpName(); renderAll(); }
-}
+function rsvExit(){ goShift(); }
 function rsvView(v){ rsvVw=v; if(v!=="map") rsvPick=null; renderRsv(); window.scrollTo(0,0); if(soundOn&&Snd.tap) Snd.tap(); }
 function renderRsv(){
   const ds=rsvDate||rsvToday(), d=new Date(ds);
@@ -2934,18 +2941,11 @@ function menuSaveItem(m){
 function yenNum(n){ return "¥"+Math.round(Number(n)||0).toLocaleString("ja-JP"); }
 
 /* ---------- 画面 ---------- */
-let _menuFrom="emp", menuQ="", menuKind="reg", menuAbbrMode=false;
+let menuQ="", menuKind="reg", menuAbbrMode=false;
 function openMenu(){
-  const cur=document.querySelector(".screen.active");
-  _menuFrom = cur ? cur.id : "emp";           // 予約・シフト・管理者、どこから来たか覚えておく
   menuQ=""; menuAbbrMode=false; show("menu"); renderMenu();
 }
-function menuExit(){
-  menuAbbrMode=false;
-  if(_menuFrom==="admin"){ show("admin"); renderAll(); }
-  else if(_menuFrom==="rsv"){ show("rsv"); renderRsv(); }
-  else { show("emp"); renderEmpName(); renderAll(); }
-}
+function menuExit(){ menuAbbrMode=false; goShift(); }
 function menuSetKind(k){ menuKind=k; menuAbbrMode=false; renderMenu(); window.scrollTo(0,0); if(soundOn&&Snd.tap) Snd.tap(); }
 function menuSearch(v){ menuQ=(v||"").trim(); renderMenuList(); }
 function toggleAbbrMode(){
