@@ -886,7 +886,7 @@ const LS_KEY = "ettoShift_v1";
 const ROOM_KEY = "ettoShift_room";
 const PREF_KEY = "ettoShift_remember";  // "1"/"0" : ログイン保持の希望
 const SESS_KEY = "ettoShift_session";   // {role, empId} : 自動ログイン用
-const APP_VERSION = "2026.09.07-4";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
+const APP_VERSION = "2026.09.07-5";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
 let soundOn = localStorage.getItem("ettoShift_sound")!=="0";  // 操作音 ON/OFF（この端末ごと・既定ON）
 /* 管理者ログイン通知（開発者だけ受信）。GASをデプロイしたら /exec URL をここに貼る。空なら何もしない */
 const LOGIN_NOTIFY_URL = "";   // ★笑っとはメール通知なし（通知は亜子だけ）。使いたくなったらGASの /exec URL を貼る
@@ -2920,9 +2920,11 @@ function rsvSaveForm(id){
   rsvSave(ds,r); closeModal();
   const put = (!id && r.seats.length) ? seatLabel(r.seats[0]) : "";
   _rsvNewSeat=null;
+  /* 席から作った新規は、そのまま席選択モードに入れる（卓を繋げたい時にすぐ足せる） */
+  if(put){ rsvVw="map"; rsvPick=r.id; }
   renderRsv();
   if(soundOn&&Snd.good) Snd.good();
-  toast(id ? "予約を更新しました" : (put ? put+" に入れました" : "予約を追加しました。「席を選ぶ」から席を決められます"));
+  toast(id ? "予約を更新しました" : (put ? put+" に入れました。続けて席を足せます" : "予約を追加しました。「席を選ぶ」から席を決められます"));
 }
 function rsvAskDelete(id){
   const ds=rsvDate||rsvToday(), r=rsvById(ds,id); if(!r) return;
