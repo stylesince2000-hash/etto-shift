@@ -886,7 +886,7 @@ const LS_KEY = "ettoShift_v1";
 const ROOM_KEY = "ettoShift_room";
 const PREF_KEY = "ettoShift_remember";  // "1"/"0" : ログイン保持の希望
 const SESS_KEY = "ettoShift_session";   // {role, empId} : 自動ログイン用
-const APP_VERSION = "2026.09.07-3";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
+const APP_VERSION = "2026.09.07-4";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
 let soundOn = localStorage.getItem("ettoShift_sound")!=="0";  // 操作音 ON/OFF（この端末ごと・既定ON）
 /* 管理者ログイン通知（開発者だけ受信）。GASをデプロイしたら /exec URL をここに貼る。空なら何もしない */
 const LOGIN_NOTIFY_URL = "";   // ★笑っとはメール通知なし（通知は亜子だけ）。使いたくなったらGASの /exec URL を貼る
@@ -1293,10 +1293,10 @@ function eventBox(ds,editable){
   let h="";
   const rl=(typeof rsvAll==="function")?rsvAll(ds):[];
   if(rl.length){
-    const heads=rl.reduce((a,r)=>a+(Number(r.n)||0),0);
+    const heads=headsText(rl);
     h+='<div class="event-box" style="border-left-color:var(--coffee);cursor:pointer" onclick="closeModal();openRsvDay(\''+ds+'\')">'+
-       '<span class="eh">📖 予約 '+rl.length+'組 / '+heads+'名</span>'+
-       '<div class="et">'+rl.slice(0,4).map(r=>esc(rsvTimeText(r)+' '+(r.name||"")+'様'+(r.n?(" "+r.n+"名"):""))).join('<br>')+
+       '<span class="eh">📖 予約 '+rl.length+'組 / '+heads+'</span>'+
+       '<div class="et">'+rl.slice(0,4).map(r=>esc(rsvTimeText(r)+' '+(r.name||"")+'様'+(nText(r)?(" "+nText(r)):""))).join('<br>')+
        (rl.length>4?'<br>ほか'+(rl.length-4)+'組':'')+'</div></div>';
   }
   if(ev) h+='<div class="event-box"><span class="eh">📌 イベント・予約</span><div class="et">'+esc(ev)+'</div></div>';
@@ -2531,18 +2531,17 @@ function renderRsv(){
   if(sum){
     let h="";
     if(isMap){
-      const list=rsvAll(ds), heads=list.reduce((a,r)=>a+(Number(r.n)||0),0);
+      const list=rsvAll(ds), heads=headsText(list);
       const un=list.filter(r=>!(r.seats||[]).length).length;
       h+='<span style="background:var(--coffee);color:#fff">'+(d.getMonth()+1)+'月'+d.getDate()+'日('+WD[d.getDay()]+')'+(ds===rsvToday()?' 今日':'')+'</span>';
       if(list.length){
-        h+='<span>'+list.length+'組</span><span>合計 '+heads+'名</span>';
+        h+='<span>'+list.length+'組</span><span>合計 '+heads+'</span>';
         if(un) h+='<span style="background:#f6e2e3;color:var(--rose)">席未定 '+un+'組</span>';
       }else h+='<span>予約なし</span>';
       if(isClosed(ds)) h+='<span style="background:#f6e2e3;color:var(--rose)">'+closeLabelFull(ds)+'</span>';
     }else if(rsvRange!=="cal"){
       const days=rsvRangeDates(), all=days.reduce((a,x)=>a.concat(rsvAll(x)),[]);
-      const heads=all.reduce((a,r)=>a+(Number(r.n)||0),0);
-      h+='<span>'+rsvRangeLabel()+'</span>'+(all.length?'<span>'+all.length+'組 '+heads+'名</span>':'<span>予約なし</span>');
+      h+='<span>'+rsvRangeLabel()+'</span>'+(all.length?'<span>'+all.length+'組 '+headsText(all)+'</span>':'<span>予約なし</span>');
     }
     sum.innerHTML=h;
   }
@@ -2562,12 +2561,11 @@ function rsvRangeHtml(){
 }
 function rsvDaySection(ds){
   const list=rsvAll(ds), d=new Date(ds);
-  const heads=list.reduce((a,r)=>a+(Number(r.n)||0),0);
   const dc=d.getDay()===0?' sun':(d.getDay()===6?' sat':'');
   let h='<div class="rsv-day'+(ds===rsvToday()?' today':'')+'"><div class="rd-head">'+
     '<span class="rd-date'+dc+'" onclick="rsvGoDay(\''+ds+'\')">'+(d.getMonth()+1)+'/'+d.getDate()+'('+WD[d.getDay()]+')</span>'+
     (isClosed(ds)?'<span class="rd-cl">'+closeLabelFull(ds)+'</span>':'')+
-    (list.length?'<span class="rd-cnt">'+list.length+'組 '+heads+'名</span>':'<span class="rd-non">予約なし</span>')+
+    (list.length?'<span class="rd-cnt">'+list.length+'組 '+headsText(list)+'</span>':'<span class="rd-non">予約なし</span>')+
     '<button class="rd-add" onclick="rsvAddOn(\''+ds+'\')" title="この日に予約を追加">＋</button></div>';
   list.forEach(r=>{ h+=rsvCardHtml(ds,r); });
   return h+'</div>';
@@ -2607,7 +2605,7 @@ function seatCell(ds, seat, cls, join){
   let inner='<span class="no">'+no+'</span>';
   if(r && !j.jl){                       // 繋がった卓は先頭にだけ名前を出す
     inner+='<span class="tm">'+esc(r.t||"")+(r.t2?"〜":"")+'</span>';
-    inner+='<span class="nmz">'+esc(r.name||"")+(r.n?(" "+r.n):"")+'</span>';
+    inner+='<span class="nmz">'+esc(r.name||"")+(nShort(r)?(" "+nShort(r)):"")+'</span>';
   }
   return '<button class="'+c+'" onclick="rsvSeatTap(\''+seat+'\')">'+inner+'</button>';
 }
@@ -2622,7 +2620,7 @@ function floorHtml(ds){
     const pr=rsvById(ds,rsvPick);
     if(pr){
       const cnt=(pr.seats||[]).length;
-      h+='<div class="pick-bar"><div class="tx">🪑 '+esc(pr.name||"")+' 様'+(pr.n?'（'+pr.n+'名）':'')+' の席<small>'+
+      h+='<div class="pick-bar"><div class="tx">🪑 '+esc(pr.name||"")+' 様'+(nText(pr)?'（'+nText(pr)+'）':'')+' の席<small>'+
          (cnt?('いま '+cnt+'席：'+seatSort(pr.seats).map(seatLabel).join('・')):'まだ席がありません')+
          '</small><small>席をタップで追加／もう一度タップで外す</small></div>'+
          '<button onclick="rsvPickDone()">完了</button></div>';
@@ -2703,7 +2701,7 @@ function assignRow(ds,seat,r){
   return '<button class="chip" style="width:100%;justify-content:flex-start;margin-bottom:8px;padding:12px 14px" onclick="rsvAssign(\''+ds+'\',\''+seat+'\',\''+r.id+'\')">'+
     '<b style="font-size:14px;color:var(--espresso);min-width:60px;text-align:left">'+esc(rsvTimeText(r))+'</b>'+
     '<span style="font-weight:700">'+esc(r.name||"（名前なし）")+' 様</span>'+
-    (r.n?'<span style="color:var(--coffee);font-weight:700">'+r.n+'名</span>':'')+
+    (nText(r)?'<span style="color:var(--coffee);font-weight:700">'+nText(r)+'</span>':'')+
     (cur?'<span style="margin-left:auto;font-size:11px;color:var(--muted)">'+esc(cur)+'</span>':'')+
     '</button>';
 }
@@ -2717,7 +2715,7 @@ function rsvCardHtml(ds,r,inModal){
   const picking=(rsvPick===r.id);
   return '<div class="rsv-card'+(picking?' picking':'')+'"'+(inModal?'':' onclick="rsvOpenEdit(\''+ds+'\',\''+r.id+'\')"')+'>'+
     '<div class="tm">'+esc(r.t||"--:--")+(r.t2?'<span class="t2">〜'+esc(r.t2)+'</span>':'')+'</div>'+
-    '<div class="bd"><div class="nm">'+esc(r.name||"（名前なし）")+' 様'+(r.n?' <span style="font-weight:600;color:var(--coffee)">'+r.n+'名</span>':'')+'</div>'+
+    '<div class="bd"><div class="nm">'+esc(r.name||"（名前なし）")+' 様'+(nText(r)?' <span style="font-weight:600;color:var(--coffee)">'+nText(r)+'</span>':'')+'</div>'+
     (seats?'<div class="seats">'+seats+'</div>':'<div class="seats"><span class="rsv-chip" style="background:#f6e2e3;color:var(--rose)">🪑 席 未定</span></div>')+
     (r.tel?'<div class="sub" style="margin-top:6px">'+telHtml(r.tel)+'</div>':'')+
     (sub.length?'<div class="sub">'+sub.join('　')+'</div>':'')+
@@ -2764,6 +2762,16 @@ function rsvTimeEnd(){
   return pad2(Math.floor(t/60))+":"+pad2(t%60);
 }
 function rsvTimeText(r){ return (r.t||"--:--")+(r.t2?("〜"+r.t2):""); }
+/* 人数は「8名」だけでなく「8〜10名」のように幅を持てる（n=下限 / n2=上限） */
+function nMin(r){ return Number(r&&r.n)||0; }
+function nMax(r){ const a=nMin(r), b=Number(r&&r.n2)||0; return b>a?b:a; }
+function nText(r){ const a=nMin(r), b=nMax(r); return a? ((b>a? a+"〜"+b : String(a))+"名") : ""; }
+function nShort(r){ const a=nMin(r), b=nMax(r); return a? (b>a? a+"-"+b : String(a)) : ""; }
+/* 合計も幅で出す（下限の合計〜上限の合計） */
+function headsText(list){
+  const lo=list.reduce((x,r)=>x+nMin(r),0), hi=list.reduce((x,r)=>x+nMax(r),0);
+  return (hi>lo ? lo+"〜"+hi : String(lo))+"名";
+}
 /* 電話番号はタップでそのままかけられるようにする（カードのタップで編集が開かないよう伝播を止める） */
 function telHtml(tel){
   const num=String(tel||"").replace(/[^0-9+]/g,"");
@@ -2851,7 +2859,13 @@ function rsvEdit(id, presetSeat){
   let h='<h3>'+(r?'📖 予約を編集':'📖 予約を追加')+'</h3><p class="msub">'+mdw(ds)+'</p>';
   rsvTimeLoad(r);
   h+=rsvTimeHtml();
-  h+='<div class="field"><label>人数</label><input type="number" id="rvN" inputmode="numeric" min="1" max="60" value="'+(r&&r.n?r.n:"")+'" placeholder="4"></div>';
+  h+='<div class="field"><label>人数</label>'+
+     '<div style="display:flex;gap:8px;align-items:center">'+
+     '<input type="number" id="rvN" inputmode="numeric" min="1" max="99" value="'+(r&&r.n?r.n:"")+'" placeholder="4" style="flex:1">'+
+     '<span style="color:var(--muted);font-weight:700;flex-shrink:0">〜</span>'+
+     '<input type="number" id="rvN2" inputmode="numeric" min="1" max="99" value="'+(r&&r.n2?r.n2:"")+'" placeholder="未定" style="flex:1">'+
+     '</div>'+
+     '<p class="hint" style="margin-top:6px">「8〜10名」のように<b>幅がある予約</b>は右にも入れてください。決まっていれば左だけでOKです。</p></div>';
   h+='<div class="field"><label>お名前</label><input type="text" id="rvName" maxlength="24" value="'+esc(r?(r.name||""):"")+'" placeholder="例: 田中"></div>';
   h+='<div class="field"><label>電話番号（任意）</label><input type="tel" id="rvTel" inputmode="tel" value="'+esc(r?(r.tel||""):"")+'" placeholder="090-0000-0000"></div>';
   h+='<div class="field"><label>備考（任意）</label><textarea id="rvMemo" rows="2" placeholder="例: コース／お子様2名／アレルギー えび">'+esc(r?(r.memo||""):"")+'</textarea></div>';
@@ -2889,12 +2903,14 @@ function rsvSaveForm(id){
   if(!name){ toast("お名前を入力してください"); const i=document.getElementById("rvName"); if(i) i.focus(); return; }
   const old = id ? rsvById(ds,id) : null;
   const n=parseInt(g("rvN"),10);
+  const n2=parseInt(g("rvN2"),10);
   const r = {
     id: id || uid(),
     t: rsvTimeValue(),
     t2: rsvTimeEnd(),
     name: name,
     n: (isFinite(n)&&n>0)? n : 0,
+    n2: (isFinite(n2)&&n2>0&&isFinite(n)&&n2>n)? n2 : 0,
     seats: old ? (old.seats||[]) : ((_rsvNewSeat && !rsvOfSeat(ds,_rsvNewSeat)) ? [_rsvNewSeat] : []),
     tel: g("rvTel"),
     memo: g("rvMemo").slice(0,300),
