@@ -471,6 +471,11 @@ input.pin::placeholder{letter-spacing:10px}
 .seat-c.sel .no,.seat-c.sel .tm,.seat-c.sel .nmz{color:#fff}
 .tbl-box.dim,.seat-c.dim{opacity:.38}
 .pick-free{border-style:dashed !important}
+/* お休みの日の空席（点線＋×） */
+.tbl-box.cl-x,.seat-c.cl-x{border-style:dashed;border-color:#e0b6ba;background:#fbf5f5;cursor:default}
+.tbl-box.cl-x .no,.seat-c.cl-x .no{color:#c9a2a6}
+.tbl-box.cl-x::before,.seat-c.cl-x::before{content:"×";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:var(--rose);opacity:.4;pointer-events:none;z-index:3}
+.rd-add.off{background:#f6e2e3;color:var(--rose)}
 
 /* ご来店時間のドラム（iPhoneのアラーム風） */
 .wheel-wrap{position:relative;display:flex;align-items:stretch;justify-content:center;gap:0;background:var(--paper);border:1.5px solid var(--line);border-radius:14px;height:154px;overflow:hidden;user-select:none;-webkit-user-select:none;margin-top:4px}
@@ -894,7 +899,7 @@ const LS_KEY = "ettoShift_v1";
 const ROOM_KEY = "ettoShift_room";
 const PREF_KEY = "ettoShift_remember";  // "1"/"0" : ログイン保持の希望
 const SESS_KEY = "ettoShift_session";   // {role, empId} : 自動ログイン用
-const APP_VERSION = "2026.09.07-9";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
+const APP_VERSION = "2026.09.07-10";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
 let soundOn = localStorage.getItem("ettoShift_sound")!=="0";  // 操作音 ON/OFF（この端末ごと・既定ON）
 /* 管理者ログイン通知（開発者だけ受信）。GASをデプロイしたら /exec URL をここに貼る。空なら何もしない */
 const LOGIN_NOTIFY_URL = "";   // ★笑っとはメール通知なし（通知は亜子だけ）。使いたくなったらGASの /exec URL を貼る
@@ -2537,6 +2542,12 @@ function renderRsv(){
       addBtn.textContent="✓ 席を決め終える";
       addBtn.className="btn btn-primary";
       addBtn.onclick=rsvPickDone;
+    }else if(isClosed(rsvAddTarget())){
+      /* お休みの日は追加できないので、押せる見た目にしない */
+      addBtn.style.display=(!isMap && rsvRange==="cal")?"none":"block";
+      addBtn.textContent="🚫 "+mdw(rsvAddTarget())+" は"+closeLabelFull(rsvAddTarget());
+      addBtn.className="btn btn-ghost";
+      addBtn.onclick=function(){ rsvClosedNote(rsvAddTarget()); };
     }else{
       addBtn.style.display=(!isMap && rsvRange==="cal")?"none":"block";
       addBtn.textContent="＋ 新規予約　"+mdw(rsvAddTarget());
@@ -2587,7 +2598,9 @@ function rsvDaySection(ds){
     '<span class="rd-date'+dc+'" onclick="rsvGoDay(\''+ds+'\')">'+(d.getMonth()+1)+'/'+d.getDate()+'('+WD[d.getDay()]+')</span>'+
     (isClosed(ds)?'<span class="rd-cl">'+closeLabelFull(ds)+'</span>':'')+
     (list.length?'<span class="rd-cnt">'+list.length+'組 '+headsText(list)+'</span>':'<span class="rd-non">予約なし</span>')+
-    '<button class="rd-add" onclick="rsvAddOn(\''+ds+'\')" title="この日に予約を追加">＋</button></div>';
+    (isClosed(ds)
+      ? '<button class="rd-add off" onclick="rsvClosedNote(\''+ds+'\')" title="お休みです">×</button>'
+      : '<button class="rd-add" onclick="rsvAddOn(\''+ds+'\')" title="この日に予約を追加">＋</button>')+'</div>';
   list.forEach(r=>{ h+=rsvCardHtml(ds,r); });
   return h+'</div>';
 }
@@ -2616,6 +2629,7 @@ function seatCell(ds, seat, cls, join){
   const j=join||{};
   let c=cls;
   if(r) c+=" on";
+  else if(isClosed(ds)) c+=" cl-x";     // お休みの日の空席は点線＋×
   if(rsvPick){
     if(r && r.id===rsvPick) c+=" sel";        // いま選んでいる組の席（タップで外す）
     else if(r) c+=" dim";                     // 他の組が使っている席
@@ -2648,6 +2662,7 @@ function floorHtml(ds){
          '<button onclick="rsvPickDone()">完了</button></div>';
     }else{ rsvPick=null; }
   }
+  if(isClosed(ds)) h+='<div class="note-ng">🚫 '+closeLabelFull(ds)+'です。この日は予約を入れられません。</div>';
   h+='<div class="floor">';
   h+='<div class="fl-zone">座敷</div><div class="fl-top">';
   ZASHIKI.forEach((n,i)=>{ h+=seatCell(ds,"z"+n,"tbl-box",jn[i]); });
@@ -2686,6 +2701,13 @@ function floorHtml(ds){
   return h;
 }
 
+/* お休みの日に予約を入れようとしたときの案内 */
+function rsvClosedNote(ds){
+  openModal('<h3>🚫 '+closeLabelFull(ds)+'です</h3>'+
+    '<p class="msub">'+mdw(ds)+' はお休みなので、予約は入れられません。</p>'+
+    '<p class="hint">この日に営業する場合は、店長が <b>管理画面 →「🚫 店休」</b> でこの日をタップして「例外で営業」に切り替えてください。</p>'+
+    '<button class="btn btn-primary" style="margin-top:14px" onclick="closeModal()">閉じる</button>');
+}
 /* 席をタップしたとき */
 function rsvSeatTap(seat){
   const ds=rsvDate||rsvToday(), r=rsvOfSeat(ds,seat);
@@ -2696,7 +2718,9 @@ function rsvSeatTap(seat){
     return;
   }
   if(soundOn&&Snd.tap) Snd.tap();
-  if(r) openSeatDetail(ds,seat,r); else openSeatAssign(ds,seat);
+  if(r) openSeatDetail(ds,seat,r);
+  else if(isClosed(ds)) rsvClosedNote(ds);   // お休みの日は新しく入れられない
+  else openSeatAssign(ds,seat);
 }
 function openSeatDetail(ds,seat,r){
   const others=seatSort(r.seats).filter(s=>s!==seat);
@@ -2891,6 +2915,7 @@ let _rsvNewSeat=null;   // 席をタップして新規作成したときの、�
 function rsvEdit(id, presetSeat){
   const ds=rsvDate||rsvToday();
   const r = id ? rsvById(ds,id) : null;
+  if(!r && isClosed(ds)){ rsvClosedNote(ds); return; }   // 新規はお休みの日に作れない（既存の編集はできる）
   _rsvNewSeat = (!id && presetSeat) ? presetSeat : null;
   let h='<h3>'+(r?'📖 予約を編集':'📖 予約を追加')+'</h3><p class="msub">'+mdw(ds)+'</p>';
   rsvTimeLoad(r);
