@@ -638,8 +638,8 @@ input.pin::placeholder{letter-spacing:10px}
         <button onclick="openMenu()">🍽 メニュー</button>
       </div>
       <div class="seg" style="margin-bottom:12px">
-        <button id="rsvSegList" class="on" onclick="rsvView('list')">📋 一覧</button>
-        <button id="rsvSegMap" onclick="rsvView('map')">🗺 席で見る</button>
+        <button id="rsvSegMap" class="on" onclick="rsvView('map')">🗺 席で見る</button>
+        <button id="rsvSegList" onclick="rsvView('list')">📋 一覧</button>
       </div>
       <div class="seg" id="rsvRangeSeg" style="margin-bottom:12px">
         <button id="rsvR_week0" onclick="rsvRangeTap('week0')">今週</button>
@@ -894,7 +894,7 @@ const LS_KEY = "ettoShift_v1";
 const ROOM_KEY = "ettoShift_room";
 const PREF_KEY = "ettoShift_remember";  // "1"/"0" : ログイン保持の希望
 const SESS_KEY = "ettoShift_session";   // {role, empId} : 自動ログイン用
-const APP_VERSION = "2026.09.07-8";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
+const APP_VERSION = "2026.09.07-9";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
 let soundOn = localStorage.getItem("ettoShift_sound")!=="0";  // 操作音 ON/OFF（この端末ごと・既定ON）
 /* 管理者ログイン通知（開発者だけ受信）。GASをデプロイしたら /exec URL をここに貼る。空なら何もしない */
 const LOGIN_NOTIFY_URL = "";   // ★笑っとはメール通知なし（通知は亜子だけ）。使いたくなったらGASの /exec URL を貼る
@@ -2421,7 +2421,7 @@ function rsvClearSeats(ds,id){
 }
 
 /* ---------- 画面 ---------- */
-let rsvDate="", rsvVw="list";   // 既定は一覧（営業中はこちらを見るため）
+let rsvDate="", rsvVw="map";   // 既定はフロア図（席の埋まり具合を先に見るため）
 let rsvRange="week0";          // 一覧の範囲: week0=今週 / week1=来週 / week2=再来週 / cal=カレンダー
 let rsvCursor=new Date();      // カレンダー表示の月
 function rsvRangeSet(v){ rsvRange=v; rsvPick=null; renderRsv(); window.scrollTo(0,0); if(soundOn&&Snd.tap) Snd.tap(); }
@@ -2497,9 +2497,9 @@ function goShift(){
   else { show("emp"); renderEmpName(); renderAll(); }
 }
 function goRsv(){ openRsv(); }
-/* 予約画面を開くときは必ず「一覧・今週・今日」から始める（前回の表示を持ち越さない） */
+/* 予約画面を開くときは必ず「席で見る・今日」から始める（前回の表示を持ち越さない） */
 function openRsv(){
-  rsvDate=rsvToday(); rsvVw="list"; rsvRange="week0"; rsvPick=null;
+  rsvDate=rsvToday(); rsvVw="map"; rsvRange="week0"; rsvPick=null;
   show("rsv"); renderRsv();
 }
 /* シフトの日付から飛んできたときだけ、その日のフロア図を開く */
