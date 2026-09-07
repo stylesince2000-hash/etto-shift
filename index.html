@@ -647,7 +647,7 @@ input.pin::placeholder{letter-spacing:10px}
       </div>
       <div class="rsv-sum" id="rsvSum"></div>
       <div id="rsvArea"></div>
-      <button class="btn btn-primary" style="margin-top:18px" id="rsvAddBtn" onclick="rsvAddOn(rsvAddTarget())">＋ 予約を追加</button>
+      <button class="btn btn-primary" style="margin-top:18px" id="rsvAddBtn">＋ 予約を追加</button>
     </div>
   </section>
 
@@ -886,7 +886,7 @@ const LS_KEY = "ettoShift_v1";
 const ROOM_KEY = "ettoShift_room";
 const PREF_KEY = "ettoShift_remember";  // "1"/"0" : ログイン保持の希望
 const SESS_KEY = "ettoShift_session";   // {role, empId} : 自動ログイン用
-const APP_VERSION = "2026.09.07-5";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
+const APP_VERSION = "2026.09.07-7";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
 let soundOn = localStorage.getItem("ettoShift_sound")!=="0";  // 操作音 ON/OFF（この端末ごと・既定ON）
 /* 管理者ログイン通知（開発者だけ受信）。GASをデプロイしたら /exec URL をここに貼る。空なら何もしない */
 const LOGIN_NOTIFY_URL = "";   // ★笑っとはメール通知なし（通知は亜子だけ）。使いたくなったらGASの /exec URL を貼る
@@ -2523,8 +2523,18 @@ function renderRsv(){
   }
   const addBtn=document.getElementById("rsvAddBtn");
   if(addBtn){
-    addBtn.style.display=(!isMap && rsvRange==="cal")?"none":"block";
-    addBtn.textContent="＋ "+mdw(rsvAddTarget())+" に予約を追加";
+    if(isMap && rsvPick){
+      /* 席を選んでいる最中は「追加」を出さない。上の帯の完了ボタンと紛らわしいため */
+      addBtn.style.display="block";
+      addBtn.textContent="✓ 席を決め終える";
+      addBtn.className="btn btn-primary";
+      addBtn.onclick=rsvPickDone;
+    }else{
+      addBtn.style.display=(!isMap && rsvRange==="cal")?"none":"block";
+      addBtn.textContent="＋ 新規予約　"+mdw(rsvAddTarget());
+      addBtn.className="btn btn-primary";
+      addBtn.onclick=function(){ rsvAddOn(rsvAddTarget()); };
+    }
   }
   /* 集計バッジ */
   const sum=document.getElementById("rsvSum");
@@ -2547,6 +2557,9 @@ function renderRsv(){
   }
   const el=document.getElementById("rsvArea"); if(!el) return;
   el.innerHTML = isMap ? floorHtml(ds) : (rsvRange==="cal" ? rsvCalHtml() : rsvRangeHtml());
+  /* 上部バーの高さは端末で変わるので、実寸を測って帯の貼り付け位置にする */
+  const pb=el.querySelector(".pick-bar");
+  if(pb){ const tb=document.querySelector("#rsv .topbar"); pb.style.top=(tb?tb.offsetHeight:70)+"px"; }
 }
 function rsvRangeDates(){ return weekDates(rsvRange==="week1"?1:(rsvRange==="week2"?2:0)); }
 function rsvRangeLabel(){
