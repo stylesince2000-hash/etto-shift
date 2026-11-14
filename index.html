@@ -916,7 +916,7 @@ const LS_KEY = "ettoShift_v1";
 const ROOM_KEY = "ettoShift_room";
 const PREF_KEY = "ettoShift_remember";  // "1"/"0" : ログイン保持の希望
 const SESS_KEY = "ettoShift_session";   // {role, empId} : 自動ログイン用
-const APP_VERSION = "2026.11.14-9";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
+const APP_VERSION = "2026.11.14-10";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
 let soundOn = localStorage.getItem("ettoShift_sound")!=="0";  // 操作音 ON/OFF（この端末ごと・既定ON）
 const NOTIFY_STAFF = [];  // この登録名のスタッフが希望(○△×/備考)を変えたらメール通知する（名前一致で判定）
 
@@ -2437,7 +2437,15 @@ function rsvClearSeats(ds,id){
 let rsvDate="", rsvVw="map";   // 既定はフロア図（席の埋まり具合を先に見るため）
 let rsvRange="week0";          // 一覧の範囲: week0=今週 / week1=来週 / week2=再来週 / cal=カレンダー
 let rsvCursor=new Date();      // カレンダー表示の月
-function rsvRangeSet(v){ rsvRange=v; rsvPick=null; renderRsv(); window.scrollTo(0,0); if(soundOn&&Snd.tap) Snd.tap(); }
+function rsvRangeSet(v){
+  rsvRange=v; rsvPick=null;
+  const toToday=rsvVw==="list" && v==="week0";
+  if(toToday) rsvDate=rsvToday();
+  renderRsv();
+  if(toToday) scrollToDayCard("rsvday_"+rsvToday());
+  else window.scrollTo(0,0);
+  if(soundOn&&Snd.tap) Snd.tap();
+}
 function rsvMonth(n){ rsvCursor.setMonth(rsvCursor.getMonth()+n); renderRsv(); }
 /* 指定日を含む週（月〜日） */
 function rsvWeekDates(ds){
@@ -2603,7 +2611,7 @@ function rsvRangeHtml(){
 function rsvDaySection(ds){
   const list=rsvAll(ds), d=new Date(ds);
   const dc=d.getDay()===0?' sun':(d.getDay()===6?' sat':'');
-  let h='<div class="rsv-day'+(ds===rsvToday()?' today':'')+'"><div class="rd-head">'+
+  let h='<div id="rsvday_'+ds+'" class="rsv-day'+(ds===rsvToday()?' today':'')+'"><div class="rd-head">'+
     '<span class="rd-date'+dc+'" onclick="rsvGoDay(\''+ds+'\')">'+(d.getMonth()+1)+'/'+d.getDate()+'('+WD[d.getDay()]+')</span>'+
     (isClosed(ds)?'<span class="rd-cl">'+closeLabelFull(ds)+'</span>':'')+
     (list.length?'<span class="rd-cnt">'+list.length+'組 '+headsText(list)+'</span>':'<span class="rd-non">予約なし</span>')+
