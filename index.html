@@ -402,6 +402,8 @@ input.pin::placeholder{letter-spacing:10px}
 
 /* フロア図 */
 .floor{background:var(--milk);border-radius:18px;padding:12px 10px 10px;box-shadow:var(--shadow-sm);position:relative}
+.floor [data-rsv-seat].on{touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.floor .drag-remove{opacity:.3;outline:2px dashed var(--rose);outline-offset:2px}
 .floor.picking{touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .fl-zone{font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:1px;margin:0 0 6px 2px}
 .fl-top{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px}
@@ -914,7 +916,7 @@ const LS_KEY = "ettoShift_v1";
 const ROOM_KEY = "ettoShift_room";
 const PREF_KEY = "ettoShift_remember";  // "1"/"0" : ログイン保持の希望
 const SESS_KEY = "ettoShift_session";   // {role, empId} : 自動ログイン用
-const APP_VERSION = "2026.11.14-4";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
+const APP_VERSION = "2026.11.14-5";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
 let soundOn = localStorage.getItem("ettoShift_sound")!=="0";  // 操作音 ON/OFF（この端末ごと・既定ON）
 const NOTIFY_STAFF = [];  // この登録名のスタッフが希望(○△×/備考)を変えたらメール通知する（名前一致で判定）
 
@@ -2703,7 +2705,7 @@ function floorHtml(ds){
     un.forEach(r=>{ h+=rsvCardHtml(ds,r); });
     h+='<div class="count-note">「席を選ぶ」を押してから、フロア図の席をタップ、またはなぞって選んでください。</div>';
   }else{
-    h+='<div class="count-note" style="margin-top:12px">席をタップすると予約の割り当て・確認ができます。<br>座敷1〜7は隣どうしを繋げられます（同じ組を続けて入れると1卓として表示）。</div>';
+    h+='<div class="count-note" style="margin-top:12px">席をタップで予約の確認。予約済みの席からなぞると、空席は追加・同じ組の席は解除できます（起点の席は残ります）。<br>座敷1〜7は隣どうしを繋げられます（同じ組を続けて入れると1卓として表示）。</div>';
   }
   return h;
 }
@@ -2726,13 +2728,22 @@ function rsvDragVisit(el){
   const owner=rsvOfSeat(g.ds,seat);
   if(owner && owner.id!==g.id) return; // 他の予約は変更しない
   g.seats.add(seat);
-  el.classList.toggle("sel",g.add);
+  const add=g.direct ? !owner : g.add;
+  if(!add) g.removeSeats.add(seat);
+  el.style.cssText=rsvColorStyle(g.ds,rsvById(g.ds,g.id));
+  el.classList.toggle("sel",add);
+  el.classList.toggle("drag-remove",!add);
 }
 function rsvDragMove(e){
   const g=rsvDrag;
   if(!g || g.pointer!==e.pointerId) return;
-  e.preventDefault();
   const dx=e.clientX-g.x, dy=e.clientY-g.y;
+  if(!g.active){
+    if(Math.hypot(dx,dy)<8) return; // 軽いタップは今までどおり詳細を開く
+    g.active=true;
+    document.documentElement.setPointerCapture(e.pointerId);
+  }
+  e.preventDefault();
   const steps=Math.max(1,Math.ceil(Math.hypot(dx,dy)/8));
   // 速く動かしても間の席を飛ばさない
   for(let i=1;i<=steps;i++){
@@ -2746,15 +2757,16 @@ function rsvDragEnd(e,cancel){
   if(!g || g.pointer!==e.pointerId) return;
   if(!cancel) rsvDragMove(e);
   rsvDrag=null;
+  if(!g.active) return;
   rsvIgnoreClickUntil=Date.now()+500;
   if(document.documentElement.hasPointerCapture(e.pointerId)) document.documentElement.releasePointerCapture(e.pointerId);
   const r=rsvById(g.ds,g.id);
-  if(!cancel && r && rsvPick===g.id && rsvDate===g.ds && !isClosed(g.ds)){
+  if(!cancel && r && (g.direct || rsvPick===g.id) && rsvDate===g.ds && !isClosed(g.ds)){
     const seats=new Set(r.seats||[]);
     g.seats.forEach(seat=>{
       const owner=rsvOfSeat(g.ds,seat);
-      if(g.add){ if(!owner) seats.add(seat); }
-      else seats.delete(seat);
+      if(g.removeSeats.has(seat)) seats.delete(seat);
+      else if(!owner) seats.add(seat);
     });
     const next=Array.from(seats);
     if(JSON.stringify(next)!==JSON.stringify(r.seats||[])){
@@ -2767,22 +2779,29 @@ function rsvDragEnd(e,cancel){
 document.addEventListener('pointerdown',function(e){
   if(!e.isPrimary){ if(rsvDrag) rsvDragEnd({pointerId:rsvDrag.pointer},true); return; }
   rsvIgnoreClickUntil=0;
-  if(e.button!==0 || !rsvPick) return;
+  if(e.button!==0) return;
   const el=e.target.closest('[data-rsv-seat]');
-  const floor=el && el.closest('.floor.picking');
+  const floor=el && el.closest('.floor');
   const ds=rsvDate||rsvToday();
   if(!floor || isClosed(ds)) return;
   const owner=rsvOfSeat(ds,el.dataset.rsvSeat);
-  if(owner && owner.id!==rsvPick) return;
+  const direct=!rsvPick;
+  if(direct ? !owner : (owner && owner.id!==rsvPick)) return;
+  rsvDrag={pointer:e.pointerId,ds:ds,id:direct?owner.id:rsvPick,floor:floor,add:!owner,direct:direct,active:!direct,seats:new Set(),removeSeats:new Set(),seen:new Set(),x:e.clientX,y:e.clientY};
+  if(direct){
+    rsvDrag.seen.add(el.dataset.rsvSeat); // 起点の席はそのまま残す
+    return;
+  }
   e.preventDefault();
-  rsvDrag={pointer:e.pointerId,ds:ds,id:rsvPick,floor:floor,add:!owner,seats:new Set(),seen:new Set(),x:e.clientX,y:e.clientY};
   document.documentElement.setPointerCapture(e.pointerId);
   rsvDragVisit(el);
 },{passive:false});
 document.addEventListener('pointermove',rsvDragMove,{passive:false});
 document.addEventListener('pointerup',e=>rsvDragEnd(e,false));
 document.addEventListener('pointercancel',e=>rsvDragEnd(e,true));
-document.addEventListener('lostpointercapture',e=>rsvDragEnd(e,true));
+document.addEventListener('lostpointercapture',function(e){
+  if(e.target===document.documentElement) rsvDragEnd(e,true);
+});
 document.addEventListener('click',function(e){
   if(e.detail && Date.now()<rsvIgnoreClickUntil){ e.preventDefault(); e.stopImmediatePropagation(); }
 },true);
