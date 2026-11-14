@@ -402,6 +402,7 @@ input.pin::placeholder{letter-spacing:10px}
 
 /* フロア図 */
 .floor{background:var(--milk);border-radius:18px;padding:12px 10px 10px;box-shadow:var(--shadow-sm);position:relative}
+.floor.picking{touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .fl-zone{font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:1px;margin:0 0 6px 2px}
 .fl-top{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px}
 .fl-bottom{display:flex;gap:5px;align-items:stretch}
@@ -902,7 +903,7 @@ const LS_KEY = "ettoShift_v1";
 const ROOM_KEY = "ettoShift_room";
 const PREF_KEY = "ettoShift_remember";  // "1"/"0" : ログイン保持の希望
 const SESS_KEY = "ettoShift_session";   // {role, empId} : 自動ログイン用
-const APP_VERSION = "2026.11.14-2";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
+const APP_VERSION = "2026.11.14-3";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
 let soundOn = localStorage.getItem("ettoShift_sound")!=="0";  // 操作音 ON/OFF（この端末ごと・既定ON）
 const NOTIFY_STAFF = [];  // この登録名のスタッフが希望(○△×/備考)を変えたらメール通知する（名前一致で判定）
 
@@ -2474,6 +2475,7 @@ function openRsvDay(ds){
 function rsvExit(){ goShift(); }
 function rsvView(v){ rsvVw=v; if(v!=="map") rsvPick=null; renderRsv(); window.scrollTo(0,0); if(soundOn&&Snd.tap) Snd.tap(); }
 function renderRsv(){
+  rsvDrag=null; // 同期・日付変更で描き直す場合は操作途中の選択を破棄する
   const ds=rsvDate||rsvToday(), d=new Date(ds);
   const isMap=(rsvVw==="map");
   document.getElementById("rsvSegMap").classList.toggle("on", isMap);
@@ -2602,7 +2604,7 @@ function seatCell(ds, seat, cls, join){
     inner+='<span class="nmz">'+esc(r.name||"")+(nShort(r)?(" "+nShort(r)):"")+'</span>';
     if((r.memo||"").trim()) inner+='<span class="memo-dot">📝</span>';   // メモありの印
   }
-  return '<button class="'+c+'" onclick="rsvSeatTap(\''+seat+'\')">'+inner+'</button>';
+  return '<button data-rsv-seat="'+seat+'" class="'+c+'" onclick="rsvSeatTap(\''+seat+'\')">'+inner+'</button>';
 }
 function topJoins(ds){
   const ids=ZASHIKI.map(n=>{ const r=rsvOfSeat(ds,"z"+n); return r?r.id:null; });
@@ -2617,12 +2619,12 @@ function floorHtml(ds){
       const cnt=(pr.seats||[]).length;
       h+='<div class="pick-bar"><div class="tx">🪑 '+esc(pr.name||"")+' 様'+(nText(pr)?'（'+nText(pr)+'）':'')+' の席<small>'+
          (cnt?('いま '+cnt+'席：'+seatSort(pr.seats).map(seatLabel).join('・')):'まだ席がありません')+
-         '</small><small>席をタップで追加／もう一度タップで外す</small></div>'+
+         '</small><small>なぞってまとめて追加／選択済みの席からなぞると解除</small></div>'+
          '<button onclick="rsvPickDone()">完了</button></div>';
     }else{ rsvPick=null; }
   }
   if(isClosed(ds)) h+='<div class="note-ng">🚫 '+closeLabelFull(ds)+'です。この日は予約を入れられません。</div>';
-  h+='<div class="floor">';
+  h+='<div class="floor'+(rsvPick?' picking':'')+'">';
   h+='<div class="fl-zone">座敷</div><div class="fl-top">';
   ZASHIKI.forEach((n,i)=>{ h+=seatCell(ds,"z"+n,"tbl-box",jn[i]); });
   h+='</div>';
@@ -2653,7 +2655,7 @@ function floorHtml(ds){
   if(un.length){
     h+='<div class="sec-title" style="margin-top:20px">🪑 席が決まっていない予約 <span style="margin-left:auto;color:var(--rose);font-weight:700">'+un.length+'組</span></div>';
     un.forEach(r=>{ h+=rsvCardHtml(ds,r); });
-    h+='<div class="count-note">「席を選ぶ」を押してから、フロア図の席をタップしてください。</div>';
+    h+='<div class="count-note">「席を選ぶ」を押してから、フロア図の席をタップ、またはなぞって選んでください。</div>';
   }else{
     h+='<div class="count-note" style="margin-top:12px">席をタップすると予約の割り当て・確認ができます。<br>座敷1〜7は隣どうしを繋げられます（同じ組を続けて入れると1卓として表示）。</div>';
   }
@@ -2667,6 +2669,79 @@ function rsvClosedNote(ds){
     '<p class="hint">この日に営業する場合は、店長が <b>管理画面 →「🚫 店休」</b> でこの日をタップして「例外で営業」に切り替えてください。</p>'+
     '<button class="btn btn-primary" style="margin-top:14px" onclick="closeModal()">閉じる</button>');
 }
+/* 席選択中は指・マウスでなぞる。途中は表示だけ変え、離した時に一括保存する。 */
+let rsvDrag=null, rsvIgnoreClickUntil=0;
+function rsvDragVisit(el){
+  const g=rsvDrag;
+  if(!g || !el || !g.floor.contains(el)) return;
+  const seat=el.dataset.rsvSeat;
+  if(g.seen.has(seat)) return;
+  g.seen.add(seat);
+  const owner=rsvOfSeat(g.ds,seat);
+  if(owner && owner.id!==g.id) return; // 他の予約は変更しない
+  g.seats.add(seat);
+  el.classList.toggle("sel",g.add);
+}
+function rsvDragMove(e){
+  const g=rsvDrag;
+  if(!g || g.pointer!==e.pointerId) return;
+  e.preventDefault();
+  const dx=e.clientX-g.x, dy=e.clientY-g.y;
+  const steps=Math.max(1,Math.ceil(Math.hypot(dx,dy)/8));
+  // 速く動かしても間の席を飛ばさない
+  for(let i=1;i<=steps;i++){
+    const hit=document.elementFromPoint(g.x+dx*i/steps,g.y+dy*i/steps);
+    rsvDragVisit(hit && hit.closest('[data-rsv-seat]'));
+  }
+  g.x=e.clientX; g.y=e.clientY;
+}
+function rsvDragEnd(e,cancel){
+  const g=rsvDrag;
+  if(!g || g.pointer!==e.pointerId) return;
+  if(!cancel) rsvDragMove(e);
+  rsvDrag=null;
+  rsvIgnoreClickUntil=Date.now()+500;
+  if(document.documentElement.hasPointerCapture(e.pointerId)) document.documentElement.releasePointerCapture(e.pointerId);
+  const r=rsvById(g.ds,g.id);
+  if(!cancel && r && rsvPick===g.id && rsvDate===g.ds && !isClosed(g.ds)){
+    const seats=new Set(r.seats||[]);
+    g.seats.forEach(seat=>{
+      const owner=rsvOfSeat(g.ds,seat);
+      if(g.add){ if(!owner) seats.add(seat); }
+      else seats.delete(seat);
+    });
+    const next=Array.from(seats);
+    if(JSON.stringify(next)!==JSON.stringify(r.seats||[])){
+      rsvSave(g.ds,Object.assign({},r,{seats:next}));
+      if(soundOn&&Snd.pick) Snd.pick();
+    }
+  }
+  renderRsv();
+}
+document.addEventListener('pointerdown',function(e){
+  if(!e.isPrimary){ if(rsvDrag) rsvDragEnd({pointerId:rsvDrag.pointer},true); return; }
+  rsvIgnoreClickUntil=0;
+  if(e.button!==0 || !rsvPick) return;
+  const el=e.target.closest('[data-rsv-seat]');
+  const floor=el && el.closest('.floor.picking');
+  const ds=rsvDate||rsvToday();
+  if(!floor || isClosed(ds)) return;
+  const owner=rsvOfSeat(ds,el.dataset.rsvSeat);
+  if(owner && owner.id!==rsvPick) return;
+  e.preventDefault();
+  rsvDrag={pointer:e.pointerId,ds:ds,id:rsvPick,floor:floor,add:!owner,seats:new Set(),seen:new Set(),x:e.clientX,y:e.clientY};
+  document.documentElement.setPointerCapture(e.pointerId);
+  rsvDragVisit(el);
+},{passive:false});
+document.addEventListener('pointermove',rsvDragMove,{passive:false});
+document.addEventListener('pointerup',e=>rsvDragEnd(e,false));
+document.addEventListener('pointercancel',e=>rsvDragEnd(e,true));
+document.addEventListener('lostpointercapture',e=>rsvDragEnd(e,true));
+document.addEventListener('click',function(e){
+  if(e.detail && Date.now()<rsvIgnoreClickUntil){ e.preventDefault(); e.stopImmediatePropagation(); }
+},true);
+window.addEventListener('blur',function(){ if(rsvDrag) rsvDragEnd({pointerId:rsvDrag.pointer},true); });
+
 /* 席をタップしたとき */
 function rsvSeatTap(seat){
   const ds=rsvDate||rsvToday(), r=rsvOfSeat(ds,seat);
@@ -2896,7 +2971,7 @@ function rsvEdit(id, presetSeat){
        '<p class="hint" style="margin-top:8px">席の変更は<b>フロア図</b>から。席をタップして「この席を空ける」、空席をタップして「席を足す」ができます。</p>'+
        '<button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="rsvClearSeats(\''+ds+'\',\''+r.id+'\')">🪑 席をすべて外す</button></div>';
   }else if(_rsvNewSeat){
-    h+='<div class="rsv-warn">🪑 保存すると <b>'+seatLabel(_rsvNewSeat)+'</b> に入ります。<br>卓を足したいときは、保存したあとフロア図で隣の席もタップしてください。</div>';
+    h+='<div class="rsv-warn">🪑 保存すると <b>'+seatLabel(_rsvNewSeat)+'</b> に入ります。<br>卓を足したいときは、保存したあとフロア図で隣の席をなぞって追加できます。</div>';
   }else{
     h+='<div class="rsv-warn" style="background:var(--foam);border-color:var(--line);color:var(--coffee)">🪑 席は登録したあと、<b>フロア図で空席をタップ</b>して割り当てます。<br>座敷1〜7は繋げられるので、大人数は続けて何卓でも入れられます。</div>';
   }
