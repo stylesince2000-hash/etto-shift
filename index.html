@@ -916,7 +916,7 @@ const LS_KEY = "ettoShift_v1";
 const ROOM_KEY = "ettoShift_room";
 const PREF_KEY = "ettoShift_remember";  // "1"/"0" : ログイン保持の希望
 const SESS_KEY = "ettoShift_session";   // {role, empId} : 自動ログイン用
-const APP_VERSION = "2026.11.14-10";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
+const APP_VERSION = "2026.11.14-11";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
 let soundOn = localStorage.getItem("ettoShift_sound")!=="0";  // 操作音 ON/OFF（この端末ごと・既定ON）
 const NOTIFY_STAFF = [];  // この登録名のスタッフが希望(○△×/備考)を変えたらメール通知する（名前一致で判定）
 
@@ -2415,6 +2415,7 @@ function rsvAssign(ds,seat,id,quiet){
   r.seats=(r.seats||[]).concat([seat]);
   rsvSave(ds,r);
   if(!quiet) closeModal();
+  rsvPick=null;
   renderRsv();
   if(soundOn&&Snd.pick) Snd.pick();
   if(!quiet) toast(seatLabel(seat)+" に "+(r.name||"")+"様 を入れました");
@@ -2424,6 +2425,7 @@ function rsvUnassign(ds,seat,quiet){
   r.seats=(r.seats||[]).filter(s=>s!==seat);
   rsvSave(ds,r);
   if(!quiet) closeModal();
+  rsvPick=null;
   renderRsv();
   if(soundOn&&Snd.tap) Snd.tap();
   if(!quiet) toast(seatLabel(seat)+" を空けました");
@@ -2508,7 +2510,6 @@ function rsvPickToggle(id){
   renderRsv();
   if(soundOn&&Snd.tap) Snd.tap();
 }
-function rsvPickDone(){ rsvPick=null; renderRsv(); if(soundOn&&Snd.good) Snd.good(); }
 function rsvToday(){ return ymd(new Date()); }
 /* 画面の行き来はこの3つに集約する（上部の共通ナビから呼ぶ） */
 function baseScreen(){ return role==="admin" ? "admin" : "emp"; }
@@ -2553,13 +2554,7 @@ function renderRsv(){
   }
   const addBtn=document.getElementById("rsvAddBtn");
   if(addBtn){
-    if(isMap && rsvPick){
-      /* 席を選んでいる最中は「追加」を出さない。上の帯の完了ボタンと紛らわしいため */
-      addBtn.style.display="block";
-      addBtn.textContent="✓ 席を決め終える";
-      addBtn.className="btn btn-primary";
-      addBtn.onclick=rsvPickDone;
-    }else if(isClosed(rsvAddTarget())){
+    if(isClosed(rsvAddTarget())){
       /* お休みの日は追加できないので、押せる見た目にしない */
       addBtn.style.display=(!isMap && rsvRange==="cal")?"none":"block";
       addBtn.textContent="🚫 "+mdw(rsvAddTarget())+" は"+closeLabelFull(rsvAddTarget());
@@ -2675,8 +2670,7 @@ function floorHtml(ds){
       const cnt=(pr.seats||[]).length;
       h+='<div class="pick-bar"><div class="tx">🪑 '+esc(pr.name||"")+' 様'+(nText(pr)?'（'+nText(pr)+'）':'')+' の席<small>'+
          (cnt?('いま '+cnt+'席：'+seatSort(pr.seats).map(seatLabel).join('・')):'まだ席がありません')+
-         '</small><small>なぞってまとめて追加／選択済みの席からなぞると解除</small></div>'+
-         '<button onclick="rsvPickDone()">完了</button></div>';
+         '</small><small>席をタップ・ドラッグで選ぶと、そのまま確定します</small></div></div>';
     }else{ rsvPick=null; }
   }
   if(isClosed(ds)) h+='<div class="note-ng">🚫 '+closeLabelFull(ds)+'です。この日は予約を入れられません。</div>';
@@ -2809,6 +2803,7 @@ function rsvDragEnd(e,cancel){
       if(soundOn&&Snd.pick) Snd.pick();
     }
   }
+  if(!g.form && !cancel) rsvPick=null;
   rsvDragRender(g);
 }
 document.addEventListener('pointerdown',function(e){
@@ -2920,7 +2915,7 @@ function rsvCardHtml(ds,r,inModal){
     (sub.length?'<div class="sub">'+sub.join('　')+'</div>':'')+
     '</div>'+
     (inModal?'':'<button class="ck'+(picking?' on':'')+'" onclick="event.stopPropagation();rsvPickAt(\''+ds+'\',\''+r.id+'\')" title="フロア図で席を選ぶ">'+
-      '<span class="i">'+(picking?'✓':'🪑')+'</span>'+(picking?'完了':'席を選ぶ')+'</button>')+
+      '<span class="i">'+(picking?'✓':'🪑')+'</span>'+(picking?'選択中':'席を選ぶ')+'</button>')+
     '</div>';
 }
 
@@ -3153,8 +3148,8 @@ function rsvSaveForm(id){
   rsvSave(ds,r); closeModal();
   const put = (!id && r.seats.length) ? seatLabel(r.seats[0]) : "";
   _rsvNewSeat=null;
-  /* 席から作った新規は、そのまま席選択モードに入れる（卓を繋げたい時にすぐ足せる） */
-  if(put){ rsvVw="map"; rsvPick=r.id; }
+  rsvPick=null;
+  if(put) rsvVw="map";
   renderRsv();
   if(soundOn&&Snd.good) Snd.good();
   toast(id ? "予約を更新しました" : (put ? put+" に入れました。続けて席を足せます" : "予約を追加しました。「席を選ぶ」から席を決められます"));
