@@ -916,7 +916,7 @@ const LS_KEY = "ettoShift_v1";
 const ROOM_KEY = "ettoShift_room";
 const PREF_KEY = "ettoShift_remember";  // "1"/"0" : ログイン保持の希望
 const SESS_KEY = "ettoShift_session";   // {role, empId} : 自動ログイン用
-const APP_VERSION = "2026.11.14-6";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
+const APP_VERSION = "2026.11.14-7";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
 let soundOn = localStorage.getItem("ettoShift_sound")!=="0";  // 操作音 ON/OFF（この端末ごと・既定ON）
 const NOTIFY_STAFF = [];  // この登録名のスタッフが希望(○△×/備考)を変えたらメール通知する（名前一致で判定）
 
@@ -2719,11 +2719,17 @@ function rsvClosedNote(ds){
 }
 /* 席選択中は指・マウスでなぞる。途中は表示だけ変え、離した時に一括保存する。 */
 let rsvDrag=null, rsvIgnoreClickUntil=0;
+function rsvDragOwner(g,seat){
+  if(g.form && g.form.seats.includes(seat)) return {id:'draft'};
+  return rsvOfSeat(g.ds,seat);
+}
+function rsvDragColor(g){ return g.form ? '--party-bg:hsl(210,65%,90%);--party-edge:hsl(210,48%,38%)' : rsvColorStyle(g.ds,rsvById(g.ds,g.id)); }
+function rsvDragRender(g){ if(g.form) rsvFormSeatsRender(); else renderRsv(); }
 function rsvDragVisit(el){
   const g=rsvDrag;
   if(!g || !el || !g.floor.contains(el)) return;
   const seat=el.dataset.rsvSeat;
-  const owner=rsvOfSeat(g.ds,seat);
+  const owner=rsvDragOwner(g,seat);
   if(owner && owner.id!==g.id) return; // 他の予約は変更しない
   if(g.direct){
     const back=g.path.indexOf(seat);
@@ -2734,12 +2740,12 @@ function rsvDragVisit(el){
     g.shrink=!!owner && seat!==g.origin;
     g.removeSeats.clear();
     g.elements.forEach((cell,key)=>{
-      const current=rsvOfSeat(g.ds,key);
+      const current=rsvDragOwner(g,key);
       if(current && current.id!==g.id) return;
       const remove=g.shrink && current && g.seats.has(key) && key!==seat;
       if(remove) g.removeSeats.add(key);
       const selected=!!current ? !remove : (!g.shrink && g.seats.has(key));
-      cell.style.cssText=rsvColorStyle(g.ds,rsvById(g.ds,g.id));
+      cell.style.cssText=rsvDragColor(g);
       cell.classList.toggle("sel",selected);
       cell.classList.toggle("drag-remove",!!remove);
     });
@@ -2750,7 +2756,7 @@ function rsvDragVisit(el){
   g.seats.add(seat);
   const add=g.add;
   if(!add) g.removeSeats.add(seat);
-  el.style.cssText=rsvColorStyle(g.ds,rsvById(g.ds,g.id));
+  el.style.cssText=rsvDragColor(g);
   el.classList.toggle("sel",add);
   el.classList.toggle("drag-remove",!add);
 }
@@ -2780,21 +2786,22 @@ function rsvDragEnd(e,cancel){
   if(!g.active) return;
   rsvIgnoreClickUntil=Date.now()+500;
   if(document.documentElement.hasPointerCapture(e.pointerId)) document.documentElement.releasePointerCapture(e.pointerId);
-  const r=rsvById(g.ds,g.id);
-  if(!cancel && r && (g.direct || rsvPick===g.id) && rsvDate===g.ds && !isClosed(g.ds)){
+  const r=g.form ? {seats:g.form.seats} : rsvById(g.ds,g.id);
+  if(!cancel && r && (g.form ? g.form===_rsvFormSeats : (g.direct || rsvPick===g.id)) && rsvDate===g.ds && !isClosed(g.ds)){
     const seats=new Set(r.seats||[]);
     g.seats.forEach(seat=>{
-      const owner=rsvOfSeat(g.ds,seat);
+      const owner=rsvDragOwner(g,seat);
       if(g.removeSeats.has(seat)) seats.delete(seat);
       else if(!owner && !g.shrink) seats.add(seat);
     });
     const next=Array.from(seats);
     if(JSON.stringify(next)!==JSON.stringify(r.seats||[])){
-      rsvSave(g.ds,Object.assign({},r,{seats:next}));
+      if(g.form) g.form.seats=next;
+      else rsvSave(g.ds,Object.assign({},r,{seats:next}));
       if(soundOn&&Snd.pick) Snd.pick();
     }
   }
-  renderRsv();
+  rsvDragRender(g);
 }
 document.addEventListener('pointerdown',function(e){
   if(!e.isPrimary){ if(rsvDrag) rsvDragEnd({pointerId:rsvDrag.pointer},true); return; }
@@ -2802,12 +2809,14 @@ document.addEventListener('pointerdown',function(e){
   if(e.button!==0) return;
   const el=e.target.closest('[data-rsv-seat]');
   const floor=el && el.closest('.floor');
-  const ds=rsvDate||rsvToday();
+  const form=floor && floor.hasAttribute('data-rsv-form') ? _rsvFormSeats : null;
+  const ds=form ? form.ds : (rsvDate||rsvToday());
   if(!floor || isClosed(ds)) return;
-  const owner=rsvOfSeat(ds,el.dataset.rsvSeat);
-  const direct=!rsvPick;
-  if(direct ? !owner : (owner && owner.id!==rsvPick)) return;
-  rsvDrag={pointer:e.pointerId,ds:ds,id:direct?owner.id:rsvPick,floor:floor,add:!owner,direct:direct,active:!direct,seats:new Set(),removeSeats:new Set(),seen:new Set(),x:e.clientX,y:e.clientY};
+  const owner=rsvDragOwner({form:form,ds:ds},el.dataset.rsvSeat);
+  const direct=form ? !!(owner && owner.id==='draft') : !rsvPick;
+  const id=form ? 'draft' : (direct && owner ? owner.id : rsvPick);
+  if(direct ? !owner : (owner && owner.id!==id)) return;
+  rsvDrag={form:form,pointer:e.pointerId,ds:ds,id:id,floor:floor,add:!owner,direct:direct,active:!direct,seats:new Set(),removeSeats:new Set(),seen:new Set(),x:e.clientX,y:e.clientY};
   if(direct){
     rsvDrag.origin=el.dataset.rsvSeat;
     rsvDrag.path=[rsvDrag.origin];
@@ -3032,13 +3041,41 @@ function rsvTimeLoad(r){
   }
 }
 
-/* ---------- 追加・編集（席はここでは決めない） ---------- */
+/* 新規予約の席は保存前の下書きとして扱う。ドラッグ処理はフロア図と共通。 */
+let _rsvFormSeats=null;
+function rsvFormSeatsHtml(){
+  const draft=_rsvFormSeats; if(!draft) return '';
+  const cell=(seat,cls)=>{
+    const selected=draft.seats.includes(seat), owner=rsvOfSeat(draft.ds,seat);
+    return '<button type="button" data-rsv-seat="'+seat+'" class="'+cls+(selected?' on sel':owner?' on dim':'')+'" style="'+(selected?rsvDragColor({form:draft}):rsvColorStyle(draft.ds,owner))+'" onclick="rsvFormSeatTap(\''+seat+'\')">'+
+      '<span class="no">'+seat.slice(1)+'</span><span class="nmz">'+(selected?'選択中':owner?esc(owner.name||'予約済み'):'空席')+'</span></button>';
+  };
+  let h='<div class="floor picking" data-rsv-form><div class="fl-zone">座敷</div><div class="fl-top">';
+  ZASHIKI.forEach(n=>{h+=cell('z'+n,'tbl-box');});
+  h+='</div><div class="fl-gap"><span class="fl-entry">◀ 入口</span></div><div class="fl-bottom"><div class="z8">'+cell('z'+ZASHIKI8,'tbl-box z8')+'</div><div class="fl-cwrap"><div class="fl-zone">カウンター</div><div class="fl-seats">';
+  COUNTER.forEach(n=>{h+=cell('c'+n,'seat-c');});
+  h+='</div><div class="fl-kitchen">キッチン</div></div></div></div>';
+  return h+'<p class="hint">'+(draft.seats.length?'選択：'+seatSort(draft.seats).map(seatLabel).join('・'):'席は未定のままでも保存できます')+'</p>';
+}
+function rsvFormSeatsRender(){
+  const host=document.getElementById('rvSeatPicker');
+  if(host && _rsvFormSeats) host.innerHTML=rsvFormSeatsHtml();
+}
+function rsvFormSeatTap(seat){
+  const draft=_rsvFormSeats; if(!draft) return;
+  if(isClosed(draft.ds)) return;
+  if(rsvOfSeat(draft.ds,seat)){toast('この席には別の予約が入っています');return;}
+  draft.seats=draft.seats.includes(seat)?draft.seats.filter(s=>s!==seat):draft.seats.concat(seat);
+  rsvFormSeatsRender();
+}
+/* ---------- 追加・編集 ---------- */
 let _rsvNewSeat=null;   // 席をタップして新規作成したときの、入れる先の席
 function rsvEdit(id, presetSeat){
   const ds=rsvDate||rsvToday();
   const r = id ? rsvById(ds,id) : null;
   if(!r && isClosed(ds)){ rsvClosedNote(ds); return; }   // 新規はお休みの日に作れない（既存の編集はできる）
   _rsvNewSeat = (!id && presetSeat) ? presetSeat : null;
+  _rsvFormSeats = r ? null : {ds:ds,seats:(_rsvNewSeat && !rsvOfSeat(ds,_rsvNewSeat))?[_rsvNewSeat]:[]};
   let h='<h3>'+(r?'📖 予約を編集':'📖 予約を追加')+'</h3><p class="msub">'+mdw(ds)+'</p>';
   rsvTimeLoad(r);
   h+=rsvTimeHtml();
@@ -3058,10 +3095,8 @@ function rsvEdit(id, presetSeat){
        seatSort(r.seats).map(s=>'<span class="rsv-chip'+(s[0]==="c"?' c':'')+'">'+seatLabel(s)+'</span>').join('')+'</div>'+
        '<p class="hint" style="margin-top:8px">席の変更は<b>フロア図</b>から。席をタップして「この席を空ける」、空席をタップして「席を足す」ができます。</p>'+
        '<button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="rsvClearSeats(\''+ds+'\',\''+r.id+'\')">🪑 席をすべて外す</button></div>';
-  }else if(_rsvNewSeat){
-    h+='<div class="rsv-warn">🪑 保存すると <b>'+seatLabel(_rsvNewSeat)+'</b> に入ります。<br>卓を足したいときは、保存したあとフロア図で隣の席をなぞって追加できます。</div>';
-  }else{
-    h+='<div class="rsv-warn" style="background:var(--foam);border-color:var(--line);color:var(--coffee)">🪑 席は登録したあと、<b>フロア図で空席をタップ</b>して割り当てます。<br>座敷1〜7は繋げられるので、大人数は続けて何卓でも入れられます。</div>';
+  }else if(!r){
+    h+='<div class="field"><label>席（任意）</label><p class="hint">空席からなぞって追加。選択した席の端を内へドラッグで縮小（3→1で1だけ）。タップでも増減できます。</p><div id="rvSeatPicker">'+rsvFormSeatsHtml()+'</div></div>';
   }
   h+='<div style="display:flex;gap:10px;margin-top:14px">'+
      '<button class="btn btn-ghost" onclick="closeModal()">閉じる</button>'+
@@ -3085,6 +3120,13 @@ function rsvSaveForm(id){
   const name=g("rvName");
   if(!name){ toast("お名前を入力してください"); const i=document.getElementById("rvName"); if(i) i.focus(); return; }
   const old = id ? rsvById(ds,id) : null;
+  if(!old && isClosed(ds)){toast('店休日のため予約を保存できません');return;}
+  const draftSeats=!old && _rsvFormSeats ? _rsvFormSeats.seats.slice() : [];
+  if(!old && draftSeats.some(seat=>rsvOfSeat(ds,seat))){
+    toast('選んだ席に別の予約が入りました。席を選び直してください');
+    _rsvFormSeats.seats=draftSeats.filter(seat=>!rsvOfSeat(ds,seat));
+    rsvFormSeatsRender(); return;
+  }
   const n=parseInt(g("rvN"),10);
   const n2=parseInt(g("rvN2"),10);
   const r = {
@@ -3094,7 +3136,7 @@ function rsvSaveForm(id){
     name: name,
     n: (isFinite(n)&&n>0)? n : 0,
     n2: (isFinite(n2)&&n2>0&&isFinite(n)&&n2>n)? n2 : 0,
-    seats: old ? (old.seats||[]) : ((_rsvNewSeat && !rsvOfSeat(ds,_rsvNewSeat)) ? [_rsvNewSeat] : []),
+    seats: old ? (old.seats||[]) : draftSeats,
     tel: g("rvTel"),
     memo: g("rvMemo").slice(0,300),
     by: old? (old.by||rsvWho()) : rsvWho(),
@@ -3334,7 +3376,7 @@ function menuImportRun(replace){
 /* ===================== MODAL ===================== */
 const modalBox=document.getElementById("modalBox");
 function openModal(html){ modalBox.innerHTML='<div class="grip"></div>'+html; document.getElementById("modalBg").classList.add("show"); }
-function closeModal(){ document.getElementById("modalBg").classList.remove("show"); if(typeof _tcAskRes==="function"){ const r=_tcAskRes; _tcAskRes=null; r(false); } }
+function closeModal(){ if(rsvDrag && rsvDrag.form) rsvDrag=null; _rsvFormSeats=null; document.getElementById("modalBg").classList.remove("show"); if(typeof _tcAskRes==="function"){ const r=_tcAskRes; _tcAskRes=null; r(false); } }
 
 /* ===================== ADMIN ===================== */
 function adminTab(t){
