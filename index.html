@@ -916,7 +916,7 @@ const LS_KEY = "ettoShift_v1";
 const ROOM_KEY = "ettoShift_room";
 const PREF_KEY = "ettoShift_remember";  // "1"/"0" : ログイン保持の希望
 const SESS_KEY = "ettoShift_session";   // {role, empId} : 自動ログイン用
-const APP_VERSION = "2026.11.14-8";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
+const APP_VERSION = "2026.11.14-9";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
 let soundOn = localStorage.getItem("ettoShift_sound")!=="0";  // 操作音 ON/OFF（この端末ごと・既定ON）
 const NOTIFY_STAFF = [];  // この登録名のスタッフが希望(○△×/備考)を変えたらメール通知する（名前一致で判定）
 
@@ -3079,7 +3079,6 @@ function rsvEdit(id, presetSeat){
   let h='<h3>'+(r?'📖 予約を編集':'📖 予約を追加')+'</h3><p class="msub">'+mdw(ds)+'</p>';
   h+='<div class="field"><label>お名前</label><input type="text" id="rvName" maxlength="24" value="'+esc(r?(r.name||""):"")+'" placeholder="例: 田中"></div>';
   rsvTimeLoad(r);
-  h+=rsvTimeHtml();
   h+='<div class="field"><label>人数</label>'+
      '<div style="display:flex;gap:8px;align-items:center">'+
      '<input type="number" id="rvN" inputmode="numeric" min="1" max="99" value="'+(r&&r.n?r.n:"")+'" placeholder="4" style="flex:1">'+
@@ -3087,6 +3086,7 @@ function rsvEdit(id, presetSeat){
      '<input type="number" id="rvN2" inputmode="numeric" min="1" max="99" value="'+(r&&r.n2?r.n2:"")+'" placeholder="未定" style="flex:1">'+
      '</div>'+
      '<p class="hint" style="margin-top:6px">「8〜10名」のように<b>幅がある予約</b>は右にも入れてください。決まっていれば左だけでOKです。</p></div>';
+  h+=rsvTimeHtml();
   h+='<div class="field"><label>電話番号（任意）</label><input type="tel" id="rvTel" inputmode="tel" value="'+esc(r?(r.tel||""):"")+'" placeholder="090-0000-0000"></div>';
   h+='<div class="field"><label>備考（任意）</label><textarea id="rvMemo" rows="2" placeholder="例: コース／お子様2名／アレルギー えび">'+esc(r?(r.memo||""):"")+'</textarea></div>';
   /* 席は登録後にフロア図から割り当てる */
