@@ -289,7 +289,8 @@ input.pin::placeholder{letter-spacing:10px}
 .inp-closed-label{font-size:12px;color:var(--muted);font-weight:700}
 /* 横画面 希望シフト早見 */
 #landscapeView{display:none;position:fixed;inset:0;z-index:80;background:linear-gradient(160deg,#e7ecf5,#f1f4f9 40%,#e9eef6);flex-direction:column;padding:calc(env(safe-area-inset-top) + 10px) 16px 14px}
-.ls-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.ls-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px}
+.ls-home{border:1px solid var(--line);border-radius:10px;background:var(--milk);color:var(--coffee);padding:9px 12px;font:inherit;font-weight:700;cursor:pointer}
 .ls-title{font-weight:700;color:var(--espresso);font-size:16px;white-space:nowrap}
 .ls-mnav{display:flex;align-items:center;gap:8px}
 .ls-mnav button{width:34px;height:34px;border-radius:10px;border:none;background:var(--foam);color:var(--coffee);font-size:16px;cursor:pointer}
@@ -561,7 +562,7 @@ input.pin::placeholder{letter-spacing:10px}
     </div>
     <div class="body">
       <div class="tabs">
-        <button onclick="goRsv()">📖 予約</button>
+        <button onclick="goRsv()">🏠 ホーム</button>
         <button class="on">📅 シフト</button>
         <button onclick="openMenu()">🍽 メニュー</button>
       </div>
@@ -613,7 +614,7 @@ input.pin::placeholder{letter-spacing:10px}
     </div>
     <div class="body">
       <div class="tabs">
-        <button onclick="goRsv()">📖 予約</button>
+        <button onclick="goRsv()">🏠 ホーム</button>
         <button onclick="goShift()">📅 シフト</button>
         <button class="on">🍽 メニュー</button>
       </div>
@@ -694,7 +695,7 @@ input.pin::placeholder{letter-spacing:10px}
     <div class="body">
       <div id="adminNotice"></div>
       <div class="tabs">
-        <button id="tabRsv" onclick="openRsv()">📖 予約</button>
+        <button id="tabRsv" onclick="goRsv()">🏠 ホーム</button>
         <button id="tabShift" class="on" onclick="adminTab('shift')">👥 シフト</button>
         <button id="tabTime" onclick="adminTab('time')">⏰ 勤怠<span class="tab-badge" id="tabTimeBadge"></span></button>
         <button id="tabMenu" onclick="openMenu()">🍽 品書</button>
@@ -901,7 +902,7 @@ const LS_KEY = "ettoShift_v1";
 const ROOM_KEY = "ettoShift_room";
 const PREF_KEY = "ettoShift_remember";  // "1"/"0" : ログイン保持の希望
 const SESS_KEY = "ettoShift_session";   // {role, empId} : 自動ログイン用
-const APP_VERSION = "2026.09.07-11";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
+const APP_VERSION = "2026.11.14-1";     // ★デプロイのたびに version.json と同じ値へ上げる（開きっぱなし端末の自動更新用）
 let soundOn = localStorage.getItem("ettoShift_sound")!=="0";  // 操作音 ON/OFF（この端末ごと・既定ON）
 /* 管理者ログイン通知（開発者だけ受信）。GASをデプロイしたら /exec URL をここに貼る。空なら何もしない */
 const LOGIN_NOTIFY_URL = "";   // ★笑っとはメール通知なし（通知は亜子だけ）。使いたくなったらGASの /exec URL を貼る
@@ -3286,13 +3287,14 @@ function lsShowDay(ds){
 }
 function renderLandscape(){
   var lv=document.getElementById("landscapeView"); if(!lv) return;
-  if(!store.staff.length){ lv.innerHTML='<div style="padding:24px;text-align:center;color:var(--muted)">スタッフが登録されていません。</div>'; return; }
+  var homeButton='<button class="ls-home" onclick="goRsv()">🏠 ホーム（予約）</button>';
+  if(!store.staff.length){ lv.innerHTML='<div class="ls-head">'+homeButton+'</div>'+'<div style="padding:24px;text-align:center;color:var(--muted)">スタッフが登録されていません。</div>'; return; }
   if(!lsStaffId || !staffById(lsStaffId)) lsStaffId=store.staff[0].id;
   var chips=''; store.staff.forEach(function(s){ chips+='<button class="ls-staffbtn'+(s.id===lsStaffId?' on':'')+'" onclick="setLsStaff(\''+s.id+'\')">'+esc(s.name)+'</button>'; });
   var sName=(staffById(lsStaffId)||{}).name||"";
   var cM=0,cS=0,cB=0;
   monthDates(adminCursor).forEach(function(ds){ var r=(store.avail[ds]||{})[lsStaffId]; if(r){ if(r.mk==="maru")cM++; else if(r.mk==="sankaku")cS++; else if(r.mk==="batsu")cB++; } });
-  lv.innerHTML='<div class="ls-head"><span class="ls-title">🙋 希望シフト早見</span>'+
+  lv.innerHTML='<div class="ls-head">'+homeButton+'<span class="ls-title">🙋 希望シフト早見</span>'+
     '<div class="ls-mnav"><button onclick="lsMonth(-1)">‹</button><span>'+adminCursor.getFullYear()+'年 '+(adminCursor.getMonth()+1)+'月</span><button onclick="lsMonth(1)">›</button></div></div>'+
     '<div class="ls-body"><div class="ls-staff">'+chips+'</div>'+
     '<div class="ls-cal"><div class="ls-calhead"><b>'+esc(sName)+'</b> さんの希望 <span class="ls-cnt"><b class="lg-maru">○</b>'+cM+'　<b class="lg-sankaku">△</b>'+cS+'　<b class="lg-batsu">×</b>'+cB+'</span></div>'+
